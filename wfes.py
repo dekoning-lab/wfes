@@ -29,7 +29,7 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
 
     extinction_probabilities = np.zeros(matrix_size)
     fixation_probabilities = np.zeros(matrix_size)
-    n = np.zeros(matrix_size)
+    generations = np.zeros(matrix_size)
 
     p_ext = c_double()
     p_fix = c_double()
@@ -37,7 +37,7 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
     t_fix = c_double()
     c_ext = c_double()
 
-    result = wf_statistics(p_ext, p_fix, t_ext, t_fix, c_ext, np.ctypeslib.as_ctypes(extinction_probabilities), np.ctypeslib.as_ctypes(fixation_probabilities), np.ctypeslib.as_ctypes(n))
+    result = wf_statistics(p_ext, p_fix, t_ext, t_fix, c_ext, np.ctypeslib.as_ctypes(extinction_probabilities), np.ctypeslib.as_ctypes(fixation_probabilities), np.ctypeslib.as_ctypes(generations))
 
     libwfes.wfes(byref(wf), byref(result), zero_threshold)
 
