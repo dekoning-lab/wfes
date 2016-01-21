@@ -4,11 +4,17 @@
 void print_help() {
     printf( "WFES: Wright-Fisher model solver\n"
             "USAGE:\n"
-            "-N, --population_size:        Population size\n"
-            "-s, --selection_coefficient:  Selection coefficient\n"
-            "-u, --forward_mutation_rate:  Mutation rate from a to A\n"
-            "-v, --backward_mutation_rate: Mutation rate from A to a\n"
-            "-d, --dominance_coefficient:  Proportion of selection Aa recieves\n");
+            " -N, --population_size:        Population size\n"
+            " -s, --selection_coefficient:  Selection coefficient\n"
+            " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
+            " -v, --backward_mutation_rate: Mutation rate from A to a\n"
+            " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
+            "[-z, --zero_threshold]:        Any number below this is considered 0. Default 1e-25\n"
+            "[-g, --generations_file]:      Generations spent with a given number of copies\n"
+            "[-e, --extinction_file]:       Probability of extinction, given the starting number of copies\n"
+            "[-f, --fixation_file]:         Probability of fixation, given the starting number of copies\n"
+            "[--force]:                     Do not preform any parameter validity checks\n"
+            "[--help]:                      Print this message and exit\n");
 }
 
 /**
@@ -186,7 +192,6 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
   }
 
-  println("Solution successful!");
   rhs[0] = 1.0;
   for (i = 1; i < matrix_size; i++) {
     rhs[i] = 0.0;

@@ -62,6 +62,22 @@ wfes N 1000 s 0.001 u 1e-8 v 1e-8 d 0.5
 
 The output format is dictated by the convenience of producing tables.
 
+## Optional parameters
+
+###Sparsity
+
+Since the Wright-Fisher matrices are generally sparse, there is an optional `zero-threshold` parameter, below which all numbers are considered zero. Judicious use of this cutoff can increase the sparsity of system, while still producing an accurate result. The default cutoff is `1e-25`.
+
+###Vector output
+
+`WFES` can write the full vector solutions that it solves for to disk via the executable. The `python` interface returns these as vectors in the result struct.
+
+There are three optional parameters, which denote file names of the output. Note that currently all the output vectors are indexed from `1`.
+
+- `--generations_file/--sojourn_time_file`: output the expected number of generations the population spends with a given number of copies to file.
+- `--extinction_file`: output the probability of extinction, conditioned on starting with a given number of copies.
+- `--fixation_file`: output the probability of fixation, conditioned on starting with a given number of copies.
+
 # Method
 
 ​Given the effective population size, the selection coefficient, the forward and backward mutation rates, and the dominance coefficient, `WFES` first builds the appropriate Wright-Fisher probability transition matrix. It then solves for exact long-term behaviors of the model using sparse direct linear solver.
@@ -82,9 +98,6 @@ aa | 1
 - The mean time to fixation, given that the allele eventually goes to fixation
 - The mean total count before extinction, given that the allele eventually goes to extinction (the sum of all copies of the allele, over all generations before extinction)
 
-##Sparsity
-
-Since the Wright-Fisher matrices are generally sparse, there is an optional `zero-threshold` parameter, below which all numbers are considered zero. Judicious use of this cutoff can increase the sparsity of system, while still producing an accurate result. The default cutoff is `1e-25`.
 ​
 ##Disk offload
 
