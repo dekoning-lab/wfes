@@ -9,6 +9,7 @@ git clone https://github.com/dekoning-lab/wfes
 cd wfes
 make
 ```
+Currently, on `linux` systems are supported.
 
 ## Usage
 
