@@ -1,6 +1,6 @@
 CC=gcc
 RM=rm -rf
-DEBUG=1
+DEBUG=0
 
 SRC_DIR:=src
 MODULES:=${SRC_DIR}/*.h

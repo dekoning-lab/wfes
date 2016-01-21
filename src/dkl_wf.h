@@ -15,14 +15,14 @@ typedef struct wf_parameters {
  * wf_statistics - summary statistics of the Wright-Fisher model
  */
 typedef struct wf_statistics {
-  double probability_extinction;  // Probability of absorption through exinction
-  double probability_fixation;    // Probability of absorption through fixation
-  double time_extinction;         // Expected number of generations until extinction
-  double time_fixation;           // Expected number of generations until fixation
-  double count_before_extinction; // Total expected count of 'A' in all generations before extinction
-  double *B1;                 // Probability of extinction vector
-  double *B2;                 // Probability of fixation vector
-  double *N;                  // Sojourn time vector
+  double probability_extinction;                    // Probability of absorption through exinction
+  double probability_fixation;                      // Probability of absorption through fixation
+  double time_extinction;                           // Expected number of generations until extinction
+  double time_fixation;                             // Expected number of generations until fixation
+  double count_before_extinction;                   // Total expected count of 'A' in all generations before extinction
+  double *extinction_probabilities;                 // Probability of extinction vector, conditional on the starting state
+  double *fixation_probabilities;                   // Probability of fixation vector
+  double *generations;                              // Sojourn time vector
 } wf_statistics;
 
 wf_statistics *wf_statistics_new(DKL_INT population_size) {
@@ -35,18 +35,18 @@ wf_statistics *wf_statistics_new(DKL_INT population_size) {
   r->count_before_extinction = 0;
 
   DKL_INT size = (2 * population_size) - 1;
-  r->B1 = dkl_alloc(size, double);
-  r->B2 = dkl_alloc(size, double);
-  r->N = dkl_alloc(size, double);
+  r->extinction_probabilities = dkl_alloc(size, double);
+  r->fixation_probabilities = dkl_alloc(size, double);
+  r->generations = dkl_alloc(size, double);
 
 
   return r;
 }
 
 void wf_statistics_del(wf_statistics *r) {
-  dkl_del(r->B1);
-  dkl_del(r->B2);
-  dkl_del(r->N);
+  dkl_del(r->extinction_probabilities);
+  dkl_del(r->fixation_probabilities);
+  dkl_del(r->generations);
   dkl_del(r);
 }
 

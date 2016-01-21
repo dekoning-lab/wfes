@@ -34,12 +34,12 @@ void print_help() {
  * @param[in] t Numeric zero threshold (range: 0:1e-10)
  *   Any number below 't' is considered zero
  *
- * @param[out] B1 Probability of extinction vector (size: 2N-1)
- *   B1[i] is the probability of extinction, given the population starts with i+1 copies of A
- * @param[out] B2 Probability of fixation vector (size: 2N-1)
- *   B2[i] is the probability of fixation, given the population starts with i+1 copies of A
- * @param[out] N Sojourn time vector (size: 2N-1)
- *  N[i] is the number of generations the population is expected to spend with i+1 copies of A, given the population starts with 1 copy of A
+ * @param[out] extinction_probabilities Probability of extinction vector (size: 2N-1)
+ *   extinction_probabilities[i] is the probability of extinction, given the population starts with i+1 copies of A
+ * @param[out] fixation_probabilities Probability of fixation vector (size: 2N-1)
+ *   fixation_probabilities[i] is the probability of fixation, given the population starts with i+1 copies of A
+ * @param[out] generations Sojourn time vector (size: 2N-1)
+ *  generations[i] is the number of generations the population is expected to spend with i+1 copies of A, given the population starts with 1 copy of A
  *
  */
 void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
@@ -119,7 +119,7 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   iparm[59] = 1;
 
 #ifdef DEBUG
-  msglvl = 0; // Print statistical information
+  msglvl = 1; // Print statistical information
 #else
   msglvl = 0; // Print statistical information in file
 #endif
@@ -183,12 +183,12 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     printf("ERROR during solution: %" PRId64 "\n", error);
     exit(phase);
   } else {
-    memcpy(r->B1, rhs, matrix_size * sizeof(double));
+    memcpy(r->extinction_probabilities, rhs, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
-      if (r->B1[i] < 0) {
-        r->B1[i] = 0.0;
+      if (r->extinction_probabilities[i] < 0) {
+        r->extinction_probabilities[i] = 0.0;
       }
-      r->B2[i] = 1.0 - r->B1[i];
+      r->fixation_probabilities[i] = 1.0 - r->extinction_probabilities[i];
     }
   }
 
@@ -204,10 +204,10 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     printf("ERROR during solution: %" PRId64 "\n", error);
     exit(phase);
   } else {
-    memcpy(r->N, rhs, matrix_size * sizeof(double));
+    memcpy(r->generations, rhs, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
-      if (r->N[i] < 0) {
-        r->N[i] = 0;
+      if (r->generations[i] < 0) {
+        r->generations[i] = 0;
       }
     }
   }
@@ -219,26 +219,26 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   // Calculate the summary statistics
   for (i = 0; i < matrix_size; i++) {
-    r->time_extinction += (r->B1[i] * r->N[i]);
-    r->time_fixation += (r->B2[i] * r->N[i]);
-    r->count_before_extinction += (r->N[i] * r->B1[i]) * (i + 1);
+    r->time_extinction += (r->extinction_probabilities[i] * r->generations[i]);
+    r->time_fixation += (r->fixation_probabilities[i] * r->generations[i]);
+    r->count_before_extinction += (r->generations[i] * r->extinction_probabilities[i]) * (i + 1);
   }
-  r->time_extinction /= r->B1[0];
-  r->time_fixation /= r->B2[0];
+  r->time_extinction /= r->extinction_probabilities[0];
+  r->time_fixation /= r->fixation_probabilities[0];
 
-  r->count_before_extinction /= r->B1[0];
+  r->count_before_extinction /= r->extinction_probabilities[0];
 
-  if (r->B1[0] <= 0) {
+  if (r->extinction_probabilities[0] <= 0) {
     r->probability_extinction = 0;
     r->time_extinction = NAN;
   } else {
-    r->probability_extinction = r->B1[0];
+    r->probability_extinction = r->extinction_probabilities[0];
   }
-  if (r->B2[0] <= 0) {
+  if (r->fixation_probabilities[0] <= 0) {
     r->probability_fixation = 0;
     r->time_fixation = NAN;
   } else {
-    r->probability_fixation = r->B2[0];
+    r->probability_fixation = r->fixation_probabilities[0];
   }
 
   // Memory release {{{1
@@ -336,9 +336,9 @@ int main(int argc, char **argv) {
         FILE *f = fopen(generations_file, "w");
         if (f != NULL) {
             for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-                fprintf(f, "%g,", results->N[i]);
+                fprintf(f, "%g,", results->generations[i]);
             }
-            fprintf(f, "%g\n", results->N[matrix_size - 1]);
+            fprintf(f, "%g\n", results->generations[matrix_size - 1]);
             fclose(f);
         }
     }
@@ -346,9 +346,9 @@ int main(int argc, char **argv) {
         FILE *f = fopen(extinction_file, "w");
         if (f != NULL) {
             for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-                fprintf(f, "%g,", results->B1[i]);
+                fprintf(f, "%g,", results->extinction_probabilities[i]);
             }
-            fprintf(f, "%g\n", results->B1[matrix_size - 1]);
+            fprintf(f, "%g\n", results->extinction_probabilities[matrix_size - 1]);
             fclose(f);
         }
     }
@@ -356,9 +356,9 @@ int main(int argc, char **argv) {
         FILE *f = fopen(fixation_file, "w");
         if (f != NULL) {
             for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-                fprintf(f, "%g,", results->B2[i]);
+                fprintf(f, "%g,", results->fixation_probabilities[i]);
             }
-            fprintf(f, "%g\n", results->B2[matrix_size - 1]);
+            fprintf(f, "%g\n", results->fixation_probabilities[matrix_size - 1]);
             fclose(f);
         }
     }

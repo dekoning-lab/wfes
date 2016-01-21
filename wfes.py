@@ -16,8 +16,8 @@ class wf_statistics(Structure):
                 ("time_extinction", c_double),
                 ("time_fixation", c_double),
                 ("count_before_extinction", c_double),
-                ("B1", POINTER(c_double)),
-                ("B2", POINTER(c_double)),
+                ("extinction_probabilities", POINTER(c_double)),
+                ("fixation_probabilities", POINTER(c_double)),
                 ("N", POINTER(c_double))]
 
 libwfes.wfes.argtypes = [POINTER(wf_parameters), POINTER(wf_statistics), c_double]
@@ -27,8 +27,8 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
     matrix_size = (2 * population_size) - 1
     wf = wf_parameters(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient)
 
-    b1 = np.zeros(matrix_size)
-    b2 = np.zeros(matrix_size)
+    extinction_probabilities = np.zeros(matrix_size)
+    fixation_probabilities = np.zeros(matrix_size)
     n = np.zeros(matrix_size)
 
     p_ext = c_double()
@@ -37,7 +37,7 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
     t_fix = c_double()
     c_ext = c_double()
 
-    result = wf_statistics(p_ext, p_fix, t_ext, t_fix, c_ext, np.ctypeslib.as_ctypes(b1), np.ctypeslib.as_ctypes(b2), np.ctypeslib.as_ctypes(n))
+    result = wf_statistics(p_ext, p_fix, t_ext, t_fix, c_ext, np.ctypeslib.as_ctypes(extinction_probabilities), np.ctypeslib.as_ctypes(fixation_probabilities), np.ctypeslib.as_ctypes(n))
 
     libwfes.wfes(byref(wf), byref(result), zero_threshold)
 
