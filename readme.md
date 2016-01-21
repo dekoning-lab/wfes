@@ -1,11 +1,11 @@
 # The Wright Fisher Exact Solver
 
-The Wright Fisher Exact Solver ,`WFES` ['double-u fez'] is a toolbox for making fast, scalable computations in population genetics. Given parameters for a Wright Fisher model, `WFES` solves for the probability of fixation or extinction of an allele, the mean time to absorption, and the conditional mean time to fixation or extinction.
+The Wright Fisher Exact Solver, `WFES` ['double-u fez'] is a toolbox for making fast, scalable computations in population genetics. Given parameters for a Wright Fisher model, `WFES` solves for the probability of fixation or extinction of an allele, the mean time to absorption, and the conditional mean time to fixation or extinction.
 
 ## Building
 The default target is the shared executable and the `python`-compatible shared library
 ```
-https://github.com/dekoning-lab/wfes
+git clone https://github.com/dekoning-lab/wfes
 cd wfes
 make
 ```
@@ -13,17 +13,28 @@ make
 ## Usage
 
 Short command line options:
-```
-wfes N 1000 s 0.001 u 1e-8 v 1e-8 h 0.5
+```lang=bash
+wfes N 1000 s 0.001 u 1e-8 v 1e-8 d 0.5
 ```
 
 Full command line options:
-```
+```lang=bash
 wfes --population_size 1000
-     --selection 0.001
+     --selection_coefficient 0.001
      --forward_mutation_rate 1e-8
      --backward_mutation_rate 1e-8
      --dominance 0.5
+```
+
+Python interface:
+```lang=python
+import wfes
+mu = 1e-8
+wfes.solve(population_size = 1000,
+    selection_coefficient = 0.001,
+    forward_mutation_rate = mu,
+    backward_mutation_rate = mu,
+    dominance_coefficient = 0.5)
 ```
 
 ## Output
@@ -45,23 +56,25 @@ wfes --population_size 1000
 
 For example:
 ```
-wfes N 1000 s 0.001 u 1e-8 v 1e-8 h 0.5
+wfes N 1000 s 0.001 u 1e-8 v 1e-8 d 0.5
 1000,0.001,1e-8,1e-8,0.5,0.995,0.005,10.0038,396.511,200
 ```
 
-## Summary
+The output format is dictated by the convenience of producing tables.
 
-​Given the effective population size, the selection coefficient, the forward and backward mutation rates (into and out of the mutant allele, respectively), and the dominance coefficient, WFES first builds the appropriate Wright-Fisher probability transition matrix. Since this matrix will have a lot of near-zero values in it, we may ask it to truncate these to zero for a reduction in memory and runtime, but a loss in accuracy (see Table 1 of the manuscript). Given a truncation threshold, WFES will consider all matrix entries under the threshold to be zero. We recommend a maximum truncation value of 1e-10.
+# Method
 
-The selection coefficient "s" and dominance coefficient "h" are related to the fitnesses of the alleles as follows.
+​Given the effective population size, the selection coefficient, the forward and backward mutation rates, and the dominance coefficient, `WFES` first builds the appropriate Wright-Fisher probability transition matrix. It then solves for exact long-term behaviors of the model using sparse direct linear solver.
+
+The selection coefficient `s` and dominance coefficient `d` are related to the fitnesses of the alleles as follows:
 
 Genotype | Fitness
 ---- | ----
 AA | 1+s
-Aa | 1+sh
+Aa | 1+sd
 aa | 1
 
-Once the Wright Fisher transition matrix has been computed, WFES will compute the 1) first row of the corresponding fundamental matrix and 2) the entire absorption probability matrix. Using these, properties of the Markov Chain are computed (for further details, see Online Methods of the manuscript). These properties are all dependent on the assumption that the allele entered the population as a single copy. They are:
+`WFES` solves for the following statistics of the model:
 
 - The probability of extinction of the allele
 - The probability of fixation of the allele
@@ -69,21 +82,10 @@ Once the Wright Fisher transition matrix has been computed, WFES will compute th
 - The mean time to fixation, given that the allele eventually goes to fixation
 - The mean total count before extinction, given that the allele eventually goes to extinction (the sum of all copies of the allele, over all generations before extinction)
 
-The first row of the fundamental matrix is also written to a user-specified file. The i-th entry represents the mean amount of steps that the Markov Chain will spend in state i before absorption (see Online Methods of the manuscript for details).
+##Sparsity
 
-WFES includes a check for input parameters that are either 1) not within acceptable parameter ranges (see table below) or 2) technically within parameter ranges but unreasonable for the specific model (for example, for a population size of 1 million the computer will likely not have the needed memory requirements). For the latter case, WFES also includes a force option to override these checks. In some specific cases when the selection coefficient is too low, the mean time to fixation given that the allele eventually fixes will be reported as NA, but this is unavoidable.
-
-
-​#### Valid Input Parameter Values
-
-Parameter | Lower Bound | Upper Bound |
----- | ---- | ----
-Population Size | 2 | Inf
-Selection Coefficient | -1 | Inf
-Forward Mutation Rate | 0 | Inf
-Backward Mutation Rate | 0 | Inf
-Dominance Coefficient | 0 | 1
-Threshold Value | 0 | 1e-10
-
-Note that the first four parameters will give an error if they are too high, even though they have a theoretically infinite upper bound. These errors can be overrode with the force option.
+Since the Wright-Fisher matrices are generally sparse, there is an optional `zero-threshold` parameter, below which all numbers are considered zero. Judicious use of this cutoff can increase the sparsity of system, while still producing an accurate result. The default cutoff is `1e-25`.
 ​
+##Disk offload
+
+`WFES` uses `MKL PARDISO` linear system solver, which has out-of-core capabilities. Please refer to `MKL` [documentation](https://software.intel.com/en-us/articles/how-to-use-ooc-pardiso). The `pardiso_ooc.cfg` contains the relevant configuration.

@@ -1,7 +1,6 @@
 from ctypes import cdll, c_double, c_longlong, pointer, POINTER, Structure, byref
 import numpy as np
 
-# vector_double = np.ctypeslib.ndpointer(dtype=np.double, ndim=1, flags='CONTIGUOUS')
 libwfes = cdll.LoadLibrary("./libwfes.so")
 
 class wf_parameters(Structure):
@@ -24,16 +23,13 @@ class wf_statistics(Structure):
 libwfes.wfes.argtypes = [POINTER(wf_parameters), POINTER(wf_statistics), c_double]
 libwfes.wfes.restype = None
 
-def wfes(population_size, selection, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold):
+def solve(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold = 1e-25):
     matrix_size = (2 * population_size) - 1
-    wf = wf_parameters(population_size, selection, forward_mutation_rate, backward_mutation_rate, dominance_coefficient)
+    wf = wf_parameters(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient)
 
     b1 = np.zeros(matrix_size)
     b2 = np.zeros(matrix_size)
     n = np.zeros(matrix_size)
-    # b1 = np.ctypeslib.as_ctypes(np.zeros(matrix_size))
-    # b2 = np.ctypeslib.as_ctypes(np.zeros(matrix_size))
-    # n = np.ctypeslib.as_ctypes(np.zeros(matrix_size))
 
     p_ext = c_double()
     p_fix = c_double()
@@ -48,5 +44,5 @@ def wfes(population_size, selection, forward_mutation_rate, backward_mutation_ra
     return(result)
 
 if __name__ == '__main__':
-    r = wfes(100, 0, 0, 0, 0.5, 0)
+    r = solve(100, 0, 0, 0, 0.5, 0)
     print(r.probability_extinction, r.probability_fixation, r.time_extinction, r.time_fixation, r.count_before_extinction)

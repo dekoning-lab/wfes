@@ -308,6 +308,11 @@ int main(int argc, char **argv) {
             println("Use `--force` to override");
             exit(DKL_PARAM_ERROR);
         }
+        if (zero_threshold > 1e-10) {
+            error_print("The zero threshold is too high - this will produce inaccurate results");
+            println("Use `--force` to override");
+            exit(DKL_PARAM_ERROR);
+        }
     }
 
 
