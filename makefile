@@ -37,7 +37,7 @@ ifeq (${DEBUG},1)
 FLAGS+=-DDEBUG -g -Wall
 endif
 
-.PHONY: all clean
+.PHONY: all clean params.txt
 
 all: wfes libwfes.so
 
@@ -47,6 +47,9 @@ wfes: ${SRC_DIR}/wfes.c ${MODULES}
 
 libwfes.so: ${SRC_DIR}/wfes.c ${MODULES}
 	${CC} -shared -fPIC $< -o $@ -L${MKL_LIB_DIR} -Wl,${LINKER_FLAGS} ${FLAGS} ${LIBS}
+
+params.txt: generate_params.py
+	python $< > $@
 
 clean:
 	${RM} wfes libwfes.so __pycache__

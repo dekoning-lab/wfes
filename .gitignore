@@ -3,5 +3,7 @@ libwfes.so
 tags
 *.#*
 *.swp
+params.txt
+.gdb_history
 .DS_Store
 __pycache__/
