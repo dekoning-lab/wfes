@@ -8,18 +8,18 @@ MODULES:=${SRC_DIR}/*.h
 MKL_LIB_DIR:=lib
 
 # Default libraries and flags
-FLAGS:=--std=c99 -DMKL_ILP64
+FLAGS:=-DMKL_ILP64
 RPATH:=-rpath,${MKL_LIB_DIR}
 LIBS:=-lmkl_intel_ilp64 -lmkl_core -lmkl_intel_thread -lpthread -lmkl_avx -lmkl_vml_avx -lm -lrt
 
 # ICC-specific flags
 ifeq (${CC},icc)
-FLAGS+=-qopenmp
+FLAGS+=-qopenmp -std=c99
 endif
 
 # GCC-specific flags
 ifeq (${CC},gcc)
-FLAGS+=-m64 -fopenmp
+FLAGS+=-m64 -fopenmp --std=c99
 LINKER_FLAGS=--no-as-needed,${RPATH}
 LIBS+=-liomp5 -ldl
 endif
