@@ -3,11 +3,22 @@
 #ifndef DKL_MEMORY_H
 #define DKL_MEMORY_H
 
-#define dkl_alloc(SIZE, TYPE) malloc(sizeof(TYPE) * (SIZE))
-#define dkl_new(TYPE) malloc(sizeof(TYPE))
-#define dkl_size_alloc(SIZE, TYPESIZE) malloc((TYPESIZE) * (SIZE))
+void *__dkl_alloc(int64_t n_elements, size_t type_size) {
+	void *obj = calloc(n_elements, type_size);
+	if (!obj) {
+		error_print("Failed to allocate %.3f MB of memory", (double)(n_elements * type_size) / 1024.0);
+	}
+	return obj;
+}
+
+#define dkl_alloc(NMEMB, TYPE) __dkl_alloc((NMEMB), sizeof(TYPE))
+#define dkl_new(TYPE) __dkl_alloc(1, sizeof(TYPE))
+#define dkl_size_alloc(NMEMB, TYPESIZE) __dkl_alloc((NMEMB), (TYPESIZE))
+
 #define dkl_dealloc(PTR) free((PTR))
 #define dkl_del(PTR) free((PTR))
 #define dkl_realloc(PTR, SIZE, TYPE) realloc((PTR), (SIZE) * sizeof(TYPE))
+
+#define check_mem(A) if (!(A)) {error_print("Memory not allocated");}
 
 #endif /* DKL_MEMORY_H */

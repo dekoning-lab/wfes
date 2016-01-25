@@ -6,7 +6,10 @@
 #define streq(A,B) strcmp((A), (B)) == 0
 #define strneq(A,B) strcmp((A), (B)) != 0
 #define println(A, ...) printf(A "\n", ##__VA_ARGS__)
-#define error_print(A, ...) printf("[ERROR] " A "\n", ##__VA_ARGS__)
+#define clean_errno() (errno == 0 ? "None" : strerror(errno))
+#define error_print(M, ...) fprintf(stderr, "[ERROR] (%s:%d: errno: %s) " M "\n", __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)
+
+
 
 // Macro definitions
 #ifdef DEBUG

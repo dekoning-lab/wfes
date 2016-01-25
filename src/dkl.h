@@ -13,13 +13,14 @@
 #include <time.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <errno.h>
 
 #include "dkl_types.h"
 
 #include "mkl_compat.h"
 
-#include "dkl_memory.h"
 #include "dkl_macros.h"
+#include "dkl_memory.h"
 #include "dkl_const.h"
 #include "dkl_error.h"
 #include "dkl_sparse_matrix.h"

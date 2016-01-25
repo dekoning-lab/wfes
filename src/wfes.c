@@ -63,7 +63,7 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   DKL_INT block_size;
   if (matrix_size >= 100) {
-    block_size = matrix_size * 0.1;
+    block_size = matrix_size * 0.01;
   } else {
     block_size = matrix_size;
   }
@@ -133,7 +133,7 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   }
   //}}}1
 
-  // Symbolic Factorization {{{1
+  // Symbolic Factorization
   phase = 11;
 #ifdef DEBUG
   start_time = get_current_time();
@@ -149,9 +149,8 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   end_time = get_current_time();
   printf("Symbolic factorization %gs\n", end_time - start_time);
 #endif
-  //}}}1
 
-  // Numeric factorization {{{1
+  // Numeric factorization
   phase = 22;
 #ifdef DEBUG
   start_time = get_current_time();
@@ -167,9 +166,8 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   end_time = get_current_time();
   printf("Numeric factorization %gs\n", end_time - start_time);
 #endif
-  //}}}1
 
-  // Solution {{{1
+  // Solution
   phase = 33;
 
   iparm[11] = 0;
@@ -215,7 +213,7 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   end_time = get_current_time();
   printf("Solution %gs\n", end_time - start_time);
 #endif
-  //}}}1
+  //
 
   // Calculate the summary statistics
   for (i = 0; i < matrix_size; i++) {
@@ -241,8 +239,8 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     r->probability_fixation = r->fixation_probabilities[0];
   }
 
-  // Memory release {{{1
-  phase = -1; // Release internal memory.
+  // Memory release
+  phase = -1; // Release internal memory
   pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, &ddum,
              A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum,
              &error);
@@ -253,8 +251,6 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   dkl_dealloc(A->data);
   dkl_dealloc(A->cols);
   dkl_dealloc(A->row_index);
-  dkl_dealloc(A);
-//}}}1
 
 #ifdef DEBUG
   printf("Memory used: %.3g GB\n",

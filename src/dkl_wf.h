@@ -178,7 +178,6 @@ csr_sparse_matrix *wf_matrix_csr(wf_parameters * wf, DKL_INT block_size,
   double allele_number = (double)(2 * wf->population_size);
   DKL_INT size = (2 * wf->population_size) - 1;
   DKL_INT i;
-  block_size = block_size > size ? size : block_size;
   DKL_INT current_size = 0;
   DKL_INT old_size = 0;
 
