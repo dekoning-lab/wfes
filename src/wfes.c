@@ -284,6 +284,9 @@ int main(int argc, char **argv) {
     // Parse optional parameters
     double zero_threshold = dkl_args_parse_double(argc, argv, false, "z", "-z", "--z", "zero_threshold", "-zero_threshold", "--zero_threshold", NULL);
     if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+		#ifdef DEBUG
+		println("Using default threshold: 1e-30");
+		#endif
         zero_threshold = 1e-30;
         dkl_clear_errno();
     }
