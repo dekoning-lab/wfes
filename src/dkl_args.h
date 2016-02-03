@@ -5,6 +5,7 @@
 
 void __args_set_field(int argc, char **argv, int64_t n_keywords, char **keywords, bool required, void *field_ptr, char type) {
     bool found = false;
+	dkl_errno = 0;
     char *err = NULL;
     char *keyword_name = keywords[n_keywords - 1];
     for(int64_t i = 0; i < argc; i ++) {

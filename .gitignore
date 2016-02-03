@@ -7,3 +7,4 @@ params.txt
 .gdb_history
 .DS_Store
 __pycache__/
+paper_table/
