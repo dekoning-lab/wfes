@@ -8,21 +8,24 @@ typedef struct wf_parameters {
   double selection;              // Selective advantage of 'A' over 'a'
   double forward_mutation_rate;  // Mutation rate from 'A' to 'a'
   double backward_mutation_rate; // Mutation rate from 'a' to 'A'
-  double dominance_coefficient;  // Proportion of selective advantage of 'Aa' over 'aa'
+  double dominance_coefficient;  // Proportion of selective advantage of 'Aa'
+                                 // over 'aa'
 } wf_parameters;
 
 /**
  * wf_statistics - summary statistics of the Wright-Fisher model
  */
 typedef struct wf_statistics {
-  double probability_extinction;                    // Probability of absorption through exinction
-  double probability_fixation;                      // Probability of absorption through fixation
-  double time_extinction;                           // Expected number of generations until extinction
-  double time_fixation;                             // Expected number of generations until fixation
-  double count_before_extinction;                   // Total expected count of 'A' in all generations before extinction
-  double *extinction_probabilities;                 // Probability of extinction vector, conditional on the starting state
-  double *fixation_probabilities;                   // Probability of fixation vector
-  double *generations;                              // Sojourn time vector
+  double probability_extinction; // Probability of absorption through exinction
+  double probability_fixation;   // Probability of absorption through fixation
+  double time_extinction; // Expected number of generations until extinction
+  double time_fixation;   // Expected number of generations until fixation
+  double count_before_extinction;   // Total expected count of 'A' in all
+                                    // generations before extinction
+  double *extinction_probabilities; // Probability of extinction vector,
+                                    // conditional on the starting state
+  double *fixation_probabilities;   // Probability of fixation vector
+  double *generations;              // Sojourn time vector
 } wf_statistics;
 
 wf_statistics *wf_statistics_new(DKL_INT population_size) {
@@ -39,7 +42,6 @@ wf_statistics *wf_statistics_new(DKL_INT population_size) {
   r->fixation_probabilities = dkl_alloc(size, double);
   r->generations = dkl_alloc(size, double);
 
-
   return r;
 }
 
@@ -50,9 +52,9 @@ void wf_statistics_del(wf_statistics *r) {
   dkl_del(r);
 }
 
-
 /**
- * wf_sampling_coefficient: calculate the binomial sampling coefficient (psi) for the Wright-Fisher matrix
+ * wf_sampling_coefficient: calculate the binomial sampling coefficient (psi)
+ * for the Wright-Fisher matrix
  *
  * @param[in] N Population size (range: 2-Inf)
  * @param[in] s Selection coefficient (range: -1:Inf)
@@ -63,12 +65,14 @@ void wf_statistics_del(wf_statistics *r) {
  *
  * @return The sampling coefficient (psi) for the Wright-Fisher matrix
  */
-double wf_sampling_coefficient(wf_parameters * wf, DKL_INT i) {
+double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
   double a = (1 + wf->selection) * (i * i);
-  double b = (1 + (wf->selection * wf->dominance_coefficient)) * i * ((2 * wf->population_size) - i);
+  double b = (1 + (wf->selection * wf->dominance_coefficient)) * i *
+             ((2 * wf->population_size) - i);
   double c = ((2 * wf->population_size) - i) * ((2 * wf->population_size) - i);
   double q = (a + b) / (a + (2 * b) + c);
-  return ((1 - wf->forward_mutation_rate) * q) + ((1 - q) * wf->backward_mutation_rate);
+  return ((1 - wf->backward_mutation_rate) * q) +
+         ((1 - q) * wf->forward_mutation_rate);
 }
 
 /**
@@ -87,12 +91,13 @@ double wf_sampling_coefficient(wf_parameters * wf, DKL_INT i) {
  * @param[in, out] Q CSR matrix to which the block belongs
  * @param[in] current_size Current number of non-zero elements in Q
  * @param[in] global_nnz Number of non-zero elements in each row of Q
- * @param[in] old_size Number of non-zero elements in Q before the block in built
+ * @param[in] old_size Number of non-zero elements in Q before the block in
+ * built
  */
-void wf_make_block(wf_parameters *wf,
-                double threshold, DKL_INT row_offset, DKL_INT block_size,
-                double *buffer, double *binom, csr_sparse_matrix *Q,
-                DKL_INT *current_size, DKL_INT *global_nnz, DKL_INT *old_size) {
+void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset,
+                   DKL_INT block_size, double *buffer, double *binom,
+                   csr_sparse_matrix *Q, DKL_INT *current_size,
+                   DKL_INT *global_nnz, DKL_INT *old_size) {
   DKL_INT size = (2 * wf->population_size) - 1;
   DKL_INT i, j;
 #pragma omp parallel for private(j)
@@ -173,7 +178,7 @@ void wf_make_block(wf_parameters *wf,
  *
  * @return The CSR of the Wright-Fisher matrix
  */
-csr_sparse_matrix *wf_matrix_csr(wf_parameters * wf, DKL_INT block_size,
+csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size,
                                  double threshold) {
   double allele_number = (double)(2 * wf->population_size);
   DKL_INT size = (2 * wf->population_size) - 1;
@@ -204,11 +209,11 @@ csr_sparse_matrix *wf_matrix_csr(wf_parameters * wf, DKL_INT block_size,
   DKL_INT rem = size % block_size;
 
   for (row_offset = 0; row_offset < (size - rem); row_offset += block_size) {
-    wf_make_block(wf, threshold, row_offset, block_size, buffer, binom,
-               Q, &current_size, global_nnz, &old_size);
+    wf_make_block(wf, threshold, row_offset, block_size, buffer, binom, Q,
+                  &current_size, global_nnz, &old_size);
   }
-  wf_make_block(wf, threshold, row_offset, rem, buffer, binom, Q,
-             &current_size, global_nnz, &old_size);
+  wf_make_block(wf, threshold, row_offset, rem, buffer, binom, Q, &current_size,
+                global_nnz, &old_size);
 
   DKL_INT csum = 0;
   for (i = 0; i < size; i++) {

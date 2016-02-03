@@ -2,19 +2,24 @@
 #include "dkl.h"
 
 void print_help() {
-    printf( "WFES: Wright-Fisher model solver\n"
-            "USAGE:\n"
-            " -N, --population_size:        Population size\n"
-            " -s, --selection_coefficient:  Selection coefficient\n"
-            " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
-            " -v, --backward_mutation_rate: Mutation rate from A to a\n"
-            " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
-            "[-z, --zero_threshold]:        Any number below this is considered 0. Default 1e-25\n"
-            "[-g, --generations_file]:      Generations spent with a given number of copies\n"
-            "[-e, --extinction_file]:       Probability of extinction, given the starting number of copies\n"
-            "[-f, --fixation_file]:         Probability of fixation, given the starting number of copies\n"
-            "[--force]:                     Do not preform any parameter validity checks\n"
-            "[--help]:                      Print this message and exit\n");
+  printf("WFES: Wright-Fisher model solver\n"
+         "USAGE:\n"
+         " -N, --population_size:        Population size\n"
+         " -s, --selection_coefficient:  Selection coefficient\n"
+         " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
+         " -u, --backward_mutation_rate: Mutation rate from A to a\n"
+         " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
+         "[-z, --zero_threshold]:        Any number below this is considered "
+         "0. Default 1e-25\n"
+         "[-g, --generations_file]:      Generations spent with a given number "
+         "of copies\n"
+         "[-e, --extinction_file]:       Probability of extinction, given the "
+         "starting number of copies\n"
+         "[-f, --fixation_file]:         Probability of fixation, given the "
+         "starting number of copies\n"
+         "[--force]:                     Do not preform any parameter validity "
+         "checks\n"
+         "[--help]:                      Print this message and exit\n");
 }
 
 /**
@@ -25,21 +30,26 @@ void print_help() {
  *   The effective population size
  * @param[in] s Selection coefficient (range: -1:Inf)
  *   The relative selective advantage of allele 'A' over allele 'a'
- * @param[in] u Forward mutation rate (range: 0:1/2N)
+ * @param[in] v Forward mutation rate (range: 0:1/2N)
  *   The rate of mutation from 'A' into 'a'
- * @param[in] v Backward mutation rate (range: 0:1/2N)
+ * @param[in] u Backward mutation rate (range: 0:1/2N)
  *   The rate of mutation from 'a' into 'A'
  * @param[in] h Dominance coefficient (range: 0:1)
  *   The proportion of selective advantage a heterozygote 'Aa' caries
  * @param[in] t Numeric zero threshold (range: 0:1e-10)
  *   Any number below 't' is considered zero
  *
- * @param[out] extinction_probabilities Probability of extinction vector (size: 2N-1)
- *   extinction_probabilities[i] is the probability of extinction, given the population starts with i+1 copies of A
- * @param[out] fixation_probabilities Probability of fixation vector (size: 2N-1)
- *   fixation_probabilities[i] is the probability of fixation, given the population starts with i+1 copies of A
+ * @param[out] extinction_probabilities Probability of extinction vector (size:
+ * 2N-1)
+ *   extinction_probabilities[i] is the probability of extinction, given the
+ * population starts with i+1 copies of A
+ * @param[out] fixation_probabilities Probability of fixation vector (size:
+ * 2N-1)
+ *   fixation_probabilities[i] is the probability of fixation, given the
+ * population starts with i+1 copies of A
  * @param[out] generations Sojourn time vector (size: 2N-1)
- *  generations[i] is the number of generations the population is expected to spend with i+1 copies of A, given the population starts with 1 copy of A
+ *  generations[i] is the number of generations the population is expected to
+ * spend with i+1 copies of A, given the population starts with 1 copy of A
  *
  */
 void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
@@ -219,7 +229,8 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   for (i = 0; i < matrix_size; i++) {
     r->time_extinction += (r->extinction_probabilities[i] * r->generations[i]);
     r->time_fixation += (r->fixation_probabilities[i] * r->generations[i]);
-    r->count_before_extinction += (r->generations[i] * r->extinction_probabilities[i]) * (i + 1);
+    r->count_before_extinction +=
+        (r->generations[i] * r->extinction_probabilities[i]) * (i + 1);
   }
   r->time_extinction /= r->extinction_probabilities[0];
   r->time_fixation /= r->fixation_probabilities[0];
@@ -264,105 +275,126 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 * main
 */
 int main(int argc, char **argv) {
-    // Parse the command line
-    bool help = dkl_args_parse_flag(argc, argv, false, "h", "-h", "--h", "help", "-help", "--help", NULL);
-    if (help) {
-        print_help();
-        exit(DKL_HELP_EXIT);
+  // Parse the command line
+  bool help = dkl_args_parse_flag(argc, argv, false, "h", "-h", "--h", "help",
+                                  "-help", "--help", NULL);
+  if (help) {
+    print_help();
+    exit(DKL_HELP_EXIT);
+  }
+
+  // Initialize WF input parameters
+  wf_parameters *wf = dkl_new(wf_parameters);
+
+  // Parse the required arguments
+  wf->population_size = dkl_args_parse_int(
+      argc, argv, true, "n", "-n", "--n", "N", "-N", "--N", "population_size",
+      "-population_size", "--population_size", NULL);
+  wf->selection = dkl_args_parse_double(
+      argc, argv, true, "s", "-s", "--s", "selection_coefficient",
+      "-selection_coefficient", "--selection_coefficient", NULL);
+  wf->forward_mutation_rate = dkl_args_parse_double(
+      argc, argv, true, "v", "-v", "--v", "forward_mutation_rate",
+      "-forward_mutation_rate", "--forward_mutation_rate", NULL);
+  wf->backward_mutation_rate = dkl_args_parse_double(
+      argc, argv, true, "u", "-u", "--u", "backward_mutation_rate",
+      "-backward_mutation_rate", "--backward_mutation_rate", NULL);
+  wf->dominance_coefficient = dkl_args_parse_double(
+      argc, argv, true, "d", "-d", "--d", "dominance_coefficient",
+      "-dominance_coefficient", "--dominance_coefficient", NULL);
+
+  // Parse optional parameters
+  double zero_threshold = dkl_args_parse_double(
+      argc, argv, false, "z", "-z", "--z", "zero_threshold", "-zero_threshold",
+      "--zero_threshold", NULL);
+  if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+    zero_threshold = 1e-30;
+    dkl_clear_errno();
+  }
+
+  char *generations_file = dkl_args_parse_string(
+      argc, argv, false, "g", "-g", "--g", "generations_file",
+      "-generations_file", "--generations_file", "sojourn_time_file",
+      "-sojourn_time_file", "--sojourn_time_file", NULL);
+  char *extinction_file = dkl_args_parse_string(
+      argc, argv, false, "e", "-e", "--e", "extinction_file",
+      "-extinction_file", "--extinction_file", NULL);
+  char *fixation_file = dkl_args_parse_string(
+      argc, argv, false, "f", "-f", "--f", "fixation_file", "-fixation_file",
+      "--fixation_file", NULL);
+
+  bool force = dkl_args_parse_flag(argc, argv, false, "force", "-force",
+                                   "--force", NULL);
+  if (!force) {
+    if (wf->population_size > 500000) {
+      error_print("The population_size parameter is too large - the "
+                  "computation might take a very long time");
+      println("Use `--force` to override");
+      exit(DKL_PARAM_ERROR);
     }
-
-    // Initialize WF input parameters
-    wf_parameters *wf = dkl_new(wf_parameters);
-
-    // Parse the required arguments
-    wf->population_size = dkl_args_parse_int(argc, argv, true, "n", "-n", "--n", "N", "-N", "--N", "population_size", "-population_size", "--population_size", NULL);
-    wf->selection = dkl_args_parse_double(argc, argv, true, "s", "-s", "--s", "selection_coefficient", "-selection_coefficient", "--selection_coefficient", NULL);
-    wf->forward_mutation_rate = dkl_args_parse_double(argc, argv, true, "u", "-u", "--u", "forward_mutation_rate", "-forward_mutation_rate", "--forward_mutation_rate", NULL);
-    wf->backward_mutation_rate = dkl_args_parse_double(argc, argv, true, "v", "-v", "--v", "backward_mutation_rate", "-backward_mutation_rate", "--backward_mutation_rate", NULL);
-    wf->dominance_coefficient = dkl_args_parse_double(argc, argv, true, "d", "-d", "--d", "dominance_coefficient", "-dominance_coefficient", "--dominance_coefficient", NULL);
-
-    // Parse optional parameters
-    double zero_threshold = dkl_args_parse_double(argc, argv, false, "z", "-z", "--z", "zero_threshold", "-zero_threshold", "--zero_threshold", NULL);
-    if (dkl_errno == DKL_OPTION_NOT_FOUND) {
-        zero_threshold = 1e-30;
-        dkl_clear_errno();
+    double max_mutation_rate = 1.0 / (2.0 * wf->population_size);
+    if (wf->forward_mutation_rate > max_mutation_rate ||
+        wf->backward_mutation_rate > max_mutation_rate) {
+      error_print(
+          "The mutation rate might violate the Wright-Fisher assumptions");
+      println("Use `--force` to override");
+      exit(DKL_PARAM_ERROR);
     }
-
-    char *generations_file = dkl_args_parse_string(argc, argv, false, "g", "-g", "--g", "generations_file",
-    "-generations_file", "--generations_file", "sojourn_time_file", "-sojourn_time_file", "--sojourn_time_file", NULL);
-    char *extinction_file = dkl_args_parse_string(argc, argv, false, "e", "-e", "--e", "extinction_file",
-"-extinction_file", "--extinction_file", NULL);
-    char *fixation_file = dkl_args_parse_string(argc, argv, false, "f", "-f", "--f", "fixation_file",
-"-fixation_file", "--fixation_file", NULL);
-
-
-    bool force = dkl_args_parse_flag(argc, argv, false, "force", "-force", "--force", NULL);
-    if (!force) {
-        if (wf->population_size > 500000) {
-            error_print("The population_size parameter is too large - the computation might take a very long time");
-            println("Use `--force` to override");
-            exit(DKL_PARAM_ERROR);
-        }
-        double max_mutation_rate = 1.0 / (2.0 * wf->population_size);
-        if (wf->forward_mutation_rate > max_mutation_rate || wf->backward_mutation_rate > max_mutation_rate) {
-            error_print("The mutation rate might violate the Wright-Fisher assumptions");
-            println("Use `--force` to override");
-            exit(DKL_PARAM_ERROR);
-        }
-        if (zero_threshold > 1e-10) {
-            error_print("The zero threshold is too high - this will produce inaccurate results");
-            println("Use `--force` to override");
-            exit(DKL_PARAM_ERROR);
-        }
+    if (zero_threshold > 1e-10) {
+      error_print("The zero threshold is too high - this will produce "
+                  "inaccurate results");
+      println("Use `--force` to override");
+      exit(DKL_PARAM_ERROR);
     }
+  }
 
+  DKL_INT matrix_size = (2 * wf->population_size) - 1;
 
-    DKL_INT matrix_size = (2 * wf->population_size) - 1;
+  wf_statistics *results = wf_statistics_new(wf->population_size);
 
-    wf_statistics *results = wf_statistics_new(wf->population_size);
+  wfes(wf, results, zero_threshold);
 
-    wfes(wf, results, zero_threshold);
+  // Output the results
+  printf("%" PRId64 ",%g,%g,%g,%g,%g,%g,%g,%g,%g\n", wf->population_size,
+         wf->selection, wf->forward_mutation_rate, wf->backward_mutation_rate,
+         wf->dominance_coefficient, results->probability_extinction,
+         results->probability_fixation, results->time_extinction,
+         results->time_fixation, results->count_before_extinction);
 
-    // Output the results
-    printf("%" PRId64 ",%g,%g,%g,%g,%g,%g,%g,%g,%g\n",
-    wf->population_size, wf->selection, wf->forward_mutation_rate, wf->backward_mutation_rate, wf->dominance_coefficient,
-    results->probability_extinction, results->probability_fixation, results->time_extinction, results->time_fixation, results->count_before_extinction);
-
-    if (generations_file) {
-        FILE *f = fopen(generations_file, "w");
-        if (f != NULL) {
-            for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-                fprintf(f, "%g,", results->generations[i]);
-            }
-            fprintf(f, "%g\n", results->generations[matrix_size - 1]);
-            fclose(f);
-        }
+  if (generations_file) {
+    FILE *f = fopen(generations_file, "w");
+    if (f != NULL) {
+      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
+        fprintf(f, "%g,", results->generations[i]);
+      }
+      fprintf(f, "%g\n", results->generations[matrix_size - 1]);
+      fclose(f);
     }
-    if (extinction_file) {
-        FILE *f = fopen(extinction_file, "w");
-        if (f != NULL) {
-            for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-                fprintf(f, "%g,", results->extinction_probabilities[i]);
-            }
-            fprintf(f, "%g\n", results->extinction_probabilities[matrix_size - 1]);
-            fclose(f);
-        }
+  }
+  if (extinction_file) {
+    FILE *f = fopen(extinction_file, "w");
+    if (f != NULL) {
+      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
+        fprintf(f, "%g,", results->extinction_probabilities[i]);
+      }
+      fprintf(f, "%g\n", results->extinction_probabilities[matrix_size - 1]);
+      fclose(f);
     }
-    if (fixation_file) {
-        FILE *f = fopen(fixation_file, "w");
-        if (f != NULL) {
-            for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-                fprintf(f, "%g,", results->fixation_probabilities[i]);
-            }
-            fprintf(f, "%g\n", results->fixation_probabilities[matrix_size - 1]);
-            fclose(f);
-        }
+  }
+  if (fixation_file) {
+    FILE *f = fopen(fixation_file, "w");
+    if (f != NULL) {
+      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
+        fprintf(f, "%g,", results->fixation_probabilities[i]);
+      }
+      fprintf(f, "%g\n", results->fixation_probabilities[matrix_size - 1]);
+      fclose(f);
     }
+  }
 
+  // Deallocation
+  dkl_del(wf);
+  wf_statistics_del(results);
 
-    // Deallocation
-    dkl_del(wf);
-    wf_statistics_del(results);
-
-    return 0;
+  return 0;
 }
