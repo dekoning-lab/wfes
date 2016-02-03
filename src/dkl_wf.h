@@ -71,8 +71,8 @@ double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
              ((2 * wf->population_size) - i);
   double c = ((2 * wf->population_size) - i) * ((2 * wf->population_size) - i);
   double q = (a + b) / (a + (2 * b) + c);
-  return ((1 - wf->backward_mutation_rate) * q) +
-         ((1 - q) * wf->forward_mutation_rate);
+  return ((1 - wf->forward_mutation_rate) * q) +
+         ((1 - q) * wf->backward_mutation_rate);
 }
 
 /**

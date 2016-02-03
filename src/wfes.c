@@ -6,8 +6,8 @@ void print_help() {
          "USAGE:\n"
          " -N, --population_size:        Population size\n"
          " -s, --selection_coefficient:  Selection coefficient\n"
-         " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
-         " -u, --backward_mutation_rate: Mutation rate from A to a\n"
+         " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
+         " -v, --backward_mutation_rate: Mutation rate from A to a\n"
          " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
          "[-z, --zero_threshold]:        Any number below this is considered "
          "0. Default 1e-25\n"
@@ -30,9 +30,9 @@ void print_help() {
  *   The effective population size
  * @param[in] s Selection coefficient (range: -1:Inf)
  *   The relative selective advantage of allele 'A' over allele 'a'
- * @param[in] v Forward mutation rate (range: 0:1/2N)
+ * @param[in] u Forward mutation rate (range: 0:1/2N)
  *   The rate of mutation from 'A' into 'a'
- * @param[in] u Backward mutation rate (range: 0:1/2N)
+ * @param[in] v Backward mutation rate (range: 0:1/2N)
  *   The rate of mutation from 'a' into 'A'
  * @param[in] h Dominance coefficient (range: 0:1)
  *   The proportion of selective advantage a heterozygote 'Aa' caries
@@ -294,10 +294,10 @@ int main(int argc, char **argv) {
       argc, argv, true, "s", "-s", "--s", "selection_coefficient",
       "-selection_coefficient", "--selection_coefficient", NULL);
   wf->forward_mutation_rate = dkl_args_parse_double(
-      argc, argv, true, "v", "-v", "--v", "forward_mutation_rate",
+      argc, argv, true, "u", "-u", "--u", "forward_mutation_rate",
       "-forward_mutation_rate", "--forward_mutation_rate", NULL);
   wf->backward_mutation_rate = dkl_args_parse_double(
-      argc, argv, true, "u", "-u", "--u", "backward_mutation_rate",
+      argc, argv, true, "v", "-v", "--v", "backward_mutation_rate",
       "-backward_mutation_rate", "--backward_mutation_rate", NULL);
   wf->dominance_coefficient = dkl_args_parse_double(
       argc, argv, true, "d", "-d", "--d", "dominance_coefficient",
