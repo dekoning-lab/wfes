@@ -114,7 +114,7 @@ There are three optional parameters, which denote file names of the output. Note
 
 There is a convenience wrapper for `python`, which has been tested against version `3.4` and `3.5`. The module assumes that the `libwfes.so` shared library (build by default) is located in the script directory. The module depends on `numpy`.
 
-# Diploid fitness model
+## Diploid fitness model
 
 ​Given the effective population size, the selection coefficient, the forward and backward mutation rates, and the dominance coefficient, `WFES` first builds the appropriate Wright-Fisher probability transition matrix. It then solves for exact long-term behaviors of the model using sparse direct linear solver.
 
