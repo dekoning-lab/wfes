@@ -6,9 +6,9 @@
 
 uname:=$(shell uname)
 
-ifeq (${uname},darwin)
+ifeq (${uname},Darwin)
 CC=clang
-else ifeq (${uname},linux)
+else ifeq (${uname},Linux)
 CC=gcc
 endif
 
