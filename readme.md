@@ -43,10 +43,10 @@ WFES: Wright-Fisher exact solver
 USAGE:
  -N, --population_size:        Population size
  -s, --selection_coefficient:  Selection coefficient
- -u, --forward_mutation_rate:  Mutation rate from a to A
- -v, --backward_mutation_rate: Mutation rate from A to a
+ -u, --forward_mutation_rate:  Mutation rate from a to A (per locus per generation)
+ -v, --backward_mutation_rate: Mutation rate from A to a (per locus per generation)
  -d, --dominance_coefficient:  Proportion of selection Aa recieves
-[-m, --selection_mode]:        Selection mode (1: viability; 2: haploid)
+[-m, --selection_mode]:        Selection mode (0: fecundity, default; 1: viability; 2: haploid)
 [-x, --observed_allele_count]: Observed count in the population (for allele age)
 [-z, --zero_threshold]:        Any number below this is considered 0. Default 1e-25
 [-g, --generations_file]:      Generations spent with a given number of copies
