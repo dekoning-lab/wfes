@@ -1,7 +1,25 @@
 # The Wright Fisher Exact Solver
 
-The Wright Fisher Exact Solver, `WFES` ['double-u fez'] is a toolbox for making fast, scalable computations in population genetics. Given parameters for a Wright Fisher model, `WFES` solves for the probability of fixation or extinction of an allele, the mean time to absorption, and the conditional mean time to fixation or extinction.
+The Wright Fisher Exact Solver, `WFES` ['double-u fez'] is a toolbox for making fast, scalable computations in population genetics and molecular evolution without diffusion theory approximations or simulation. Given parameters for a Wright Fisher model, `WFES` exactly calculates a variety of transient and long-term behaviours using efficient sparse parallel linear algebra techniques. On most computers, `WFES` supports population sizes up to about `Ne=100,000`. Truncation of very small values in the transition matrix can be performed (`-z`) to ameliorate the large space-complexity of such models (see Kryukov, DeSanctis and de Koning, 2016). An experimental "out of core" option is also available to support even larger population sizes, however, this option is unstable in the current release.
 
+### Supported exact computations
+
+WFES' exact statistics currently include: 
+* the probabilities of fixation and extinction of an allele; 
+* the mean time to absorption; 
+* the conditional mean time to fixation or extinction; 
+* the mean sojourn times in each frequency class (optional); 
+* the mean number of copies of an allele on its way to extinction (the "window of opportunity" for secondary mutations in our stochastic tunnelling codon models; in prep.);
+* the exact expected age of an allele (optional, if an observed frequency is provided, `-x`; DeSanctis and de Koning, 2016);
+* the expected rate of phylogenetic substitution accounting for fast recurrent mutation (in prep.). 
+
+### Model variations
+
+Several variations of the general Wright-Fisher model are supported by default that incorporate two-way mutation, selection, and dominance. These include the standard model of fecundity selection (diploid) `-m 0`, an alternative viabiity selection model (diploid) `-m 1`, and a haploid model accounting for mutation and selection `-m 2`.
+
+*Please cite:* **Kryukov I, DeSanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
+
+---
 ## Building
 The default target is the shared executable and the `python`-compatible shared library
 ```
@@ -9,7 +27,7 @@ git clone https://github.com/dekoning-lab/wfes
 cd wfes
 make
 ```
-Currently, on `linux` systems are supported.
+Currently, only `linux` systems are supported.
 
 ## Usage
 
@@ -20,11 +38,22 @@ wfes N 1000 s 0.001 u 1e-8 v 1e-8 d 0.5
 
 Full command line options:
 ```lang=bash
-wfes --population_size 1000
-     --selection_coefficient 0.001
-     --forward_mutation_rate 1e-8
-     --backward_mutation_rate 1e-8
-     --dominance 0.5
+$ ./wfes --help
+WFES: Wright-Fisher exact solver
+USAGE:
+ -N, --population_size:        Population size
+ -s, --selection_coefficient:  Selection coefficient
+ -u, --forward_mutation_rate:  Mutation rate from a to A
+ -v, --backward_mutation_rate: Mutation rate from A to a
+ -d, --dominance_coefficient:  Proportion of selection Aa recieves
+[-m, --selection_mode]:        Selection mode (1: viability; 2: haploid)
+[-x, --observed_allele_count]: Observed count in the population (for allele age)
+[-z, --zero_threshold]:        Any number below this is considered 0. Default 1e-25
+[-g, --generations_file]:      Generations spent with a given number of copies
+[-e, --extinction_file]:       Probability of extinction, given the starting number of copies
+[-f, --fixation_file]:         Probability of fixation, given the starting number of copies
+[--force]:                     Do not preform any parameter validity checks
+[--help]:                      Print this message and exit
 ```
 
 Python interface:
@@ -54,6 +83,8 @@ wfes.solve(population_size = 1000,
 |`time_to_extinction`|
 |`time_to_fixation`|
 |`total_count_before_extinction`|
+|`expected_allele_age`|
+|`phylogenetic_substitution_rate`|
 
 For example:
 ```
@@ -83,27 +114,19 @@ There are three optional parameters, which denote file names of the output. Note
 
 There is a convenience wrapper for `python`, which has been tested against version `3.4` and `3.5`. The module assumes that the `libwfes.so` shared library (build by default) is located in the script directory. The module depends on `numpy`.
 
-# Method
+# Diploid fitness model
 
 ​Given the effective population size, the selection coefficient, the forward and backward mutation rates, and the dominance coefficient, `WFES` first builds the appropriate Wright-Fisher probability transition matrix. It then solves for exact long-term behaviors of the model using sparse direct linear solver.
 
-The selection coefficient `s` and dominance coefficient `d` are related to the fitnesses of the alleles as follows:
+For a wildtype allele `a` and a mutant allele `A`, the selection coefficient `s` and dominance coefficient `h` are related to the fitnesses of the alleles as follows:
 
 Genotype | Fitness
 ---- | ----
 AA | 1+s
-Aa | 1+sd
+Aa | 1+sh
 aa | 1
-
-`WFES` solves for the following statistics of the model:
-
-- The probability of extinction of the allele
-- The probability of fixation of the allele
-- The mean time to extinction, given that the allele eventually goes to extinction
-- The mean time to fixation, given that the allele eventually goes to fixation
-- The mean total count before extinction, given that the allele eventually goes to extinction (the sum of all copies of the allele, over all generations before extinction)
 
 ​
 ##Disk offload
 
-`WFES` uses `MKL PARDISO` linear system solver, which has out-of-core capabilities. Please refer to `MKL` [documentation](https://software.intel.com/en-us/articles/how-to-use-ooc-pardiso). The `pardiso_ooc.cfg` contains the relevant configuration.
+`WFES` uses `MKL PARDISO` linear system solver, which has out-of-core capabilities. Please refer to `MKL` [documentation](https://software.intel.com/en-us/articles/how-to-use-ooc-pardiso). The `pardiso_ooc.cfg` contains the relevant configuration. *Warning:* this feature is currently experimental.
