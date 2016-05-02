@@ -10,6 +10,8 @@ typedef struct wf_parameters {
   double backward_mutation_rate; // Mutation rate from 'a' to 'A'
   double dominance_coefficient;  // Proportion of selective advantage of 'Aa'
                                  // over 'aa'
+  int    selection_mode;	 // 0: fecundity; 1: viability, 2: haploid fecundity
+  int    observed_allele_count;	 // (If allele age requested, this is the observed count)
 } wf_parameters;
 
 /**
@@ -26,6 +28,9 @@ typedef struct wf_statistics {
                                     // conditional on the starting state
   double *fixation_probabilities;   // Probability of fixation vector
   double *generations;              // Sojourn time vector
+  
+  double expectedAge;		    // Expected allele age (DeSanctis and de Koning, 2016)
+  double ageVariance;		    // Expected allele age-variance (DeSanctis and de Koning, 2016)
 } wf_statistics;
 
 wf_statistics *wf_statistics_new(DKL_INT population_size) {
@@ -74,7 +79,51 @@ double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
   return ((1 - wf->forward_mutation_rate) * q) +
          ((1 - q) * wf->backward_mutation_rate);
 }
+/**
+ * wf_sampling_coefficient_viability: calculate the binomial sampling coefficient (psi)
+ * for the Wright-Fisher matrix using viability selection (de Koning)
+ *
+ * @param[in] N Population size (range: 2-Inf)
+ * @param[in] s Selection coefficient (range: -1:Inf)
+ * @param[in] u Forward mutation rate (range: 0:1/2N)
+ * @param[in] v Backward mutation rate (range: 0:1/2N)
+ * @param[in] h Dominance coefficient (range: 0:1)
+ * @param[in] i Current number of copies of 'A' in the population
+ *
+ * @return The sampling coefficient (psi) for the Wright-Fisher matrix
+ */
+double wf_sampling_coefficient_viability(wf_parameters *wf, DKL_INT i) {
+  double x = i/(2.0*wf->population_size);
+  double v = wf->forward_mutation_rate;
+  double u = wf->backward_mutation_rate;
+  double h = wf->dominance_coefficient;
+  double s = wf->selection;
 
+  double psi = ( ( -v + (-1 + u + v)*x ) * (1 + s * (h + v - h*v + (h-1)*(v+u-1)*x) ) ) / ( -1+s * (-v+(-1+u+v)*x ) * (2*h+v-2*h*v+( 2*h-1 ) * (v+u-1) * x ) ); 
+  return psi; 
+}
+
+/**
+ * wf_sampling_coefficient_haploid: calculate the binomial sampling coefficient (psi)
+ * for the Wright-Fisher matrix using haploid selection+mutation and fecundity selection (de Koning)
+ *
+ * @param[in] N Population size (range: 2-Inf)
+ * @param[in] s Selection coefficient (range: -1:Inf)
+ * @param[in] u Forward mutation rate (range: 0:1/2N)
+ * @param[in] v Backward mutation rate (range: 0:1/2N)
+ * @param[in] i Current number of copies of 'A' in the population
+ *
+ * @return The sampling coefficient (psi) for the Wright-Fisher matrix
+ */
+double wf_sampling_coefficient_haploid(wf_parameters *wf, DKL_INT i) {
+  double N = wf->population_size * 2.0;
+  double v = wf->forward_mutation_rate;
+  double u = wf->backward_mutation_rate;
+  double s = wf->selection;
+
+  double psi = ( i * (s+1) * (1-u) + (N-i)*v ) / ( i * (1+s) + N-i );
+  return psi;
+}
 /**
  * wf_make_block: calculate 'block_size' rows of the Wright-Fisher matrix
  *
@@ -103,8 +152,16 @@ void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset,
 #pragma omp parallel for private(j)
   for (i = 0; i < block_size; i++) {
 
+    double lq;
+    if (wf->selection_mode == 1) {
+	lq = wf_sampling_coefficient_viability(wf, row_offset + i + 1);
+    } else if (wf->selection_mode == 2) {
+	lq = wf_sampling_coefficient_haploid(wf, row_offset + i + 1);
+    } else {
+	lq = wf_sampling_coefficient(wf, row_offset + i + 1);
+    }
+
     DKL_INT local_nnz = 0;
-    double lq = wf_sampling_coefficient(wf, row_offset + i + 1);
     double lnq = log(1.0 - lq);
     lq = log(lq);
     double lz = lq - lnq;

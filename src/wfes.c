@@ -9,6 +9,8 @@ void print_help() {
          " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -v, --backward_mutation_rate: Mutation rate from A to a\n"
          " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
+         "[-m, --selection_mode]:        Selection mode (1: viability; 2: haploid)\n"
+         "[-x, --observed_allele_count]: Observed count in the population (for allele age)\n"
          "[-z, --zero_threshold]:        Any number below this is considered "
          "0. Default 1e-25\n"
          "[-g, --generations_file]:      Generations spent with a given number "
@@ -23,7 +25,7 @@ void print_help() {
 }
 
 /**
- * wfes: solve for conditional time to absorption and sojourn times
+ * wfes: solve for conditional times to absorption, sojourn times etc.
  *
  * Input parameters
  * @param[in] N Population size (range: 2-Inf)
@@ -38,6 +40,8 @@ void print_help() {
  *   The proportion of selective advantage a heterozygote 'Aa' caries
  * @param[in] t Numeric zero threshold (range: 0:1e-10)
  *   Any number below 't' is considered zero
+ * @param[in] m Selection mode (Range: 0,1)
+ *   Type of selection (fecundity-default or viability) 
  *
  * @param[out] extinction_probabilities Probability of extinction vector (size:
  * 2N-1)
@@ -47,6 +51,9 @@ void print_help() {
  * 2N-1)
  *   fixation_probabilities[i] is the probability of fixation, given the
  * population starts with i+1 copies of A
+ *
+ * THIS DESCRIPTION NEEDS TO BE UPDATED 
+ *
  * @param[out] generations Sojourn time vector (size: 2N-1)
  *  generations[i] is the number of generations the population is expected to
  * spend with i+1 copies of A, given the population starts with 1 copy of A
@@ -71,6 +78,10 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   double *rhs = dkl_alloc(matrix_size, double);
   double *workspace = dkl_alloc(matrix_size, double);
 
+  // If allele age
+  double *_M2 = dkl_alloc(matrix_size, double);
+  double *_M3 = dkl_alloc(matrix_size, double);
+
   DKL_INT block_size;
   if (matrix_size >= 100) {
     block_size = matrix_size * 0.01;
@@ -94,6 +105,11 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   printf("Building matrix: %gs\n", end_time - start_time);
 #endif
 
+  for (i = 0; i < matrix_size; i++) {
+        rhs[i]=0;
+  }
+
+  // RHS for solving for column of B
   for (i = 0; i < matrix_size; i++) {
     double q = wf_sampling_coefficient(wf, i + 1);
     rhs[i] = pow(1 - q, 2 * wf->population_size);
@@ -184,6 +200,8 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 #ifdef DEBUG
   start_time = get_current_time();
 #endif
+
+  // Solve for the second column of B matrix (absorption probs), given rhs=R_2N (equation 20 and 8; WFES)
   pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
              A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
              workspace, &error);
@@ -191,6 +209,7 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     printf("ERROR during solution: %" PRId64 "\n", error);
     exit(phase);
   } else {
+    // NOTE: This seems backwards; should be fixation_probabilities!
     memcpy(r->extinction_probabilities, rhs, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
       if (r->extinction_probabilities[i] < 0) {
@@ -200,6 +219,8 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
   }
 
+  // Solve for the first row of N -> "generations" (equation 19; WFES)
+  // Set rhs = Ip for p=1 [Note, first index is 1 not 0]
   rhs[0] = 1.0;
   for (i = 1; i < matrix_size; i++) {
     rhs[i] = 0.0;
@@ -212,6 +233,7 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     printf("ERROR during solution: %" PRId64 "\n", error);
     exit(phase);
   } else {
+    // 
     memcpy(r->generations, rhs, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
       if (r->generations[i] < 0) {
@@ -219,11 +241,91 @@ void wfes(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       }
     }
   }
+
+  if ( wf->observed_allele_count > 0) {
+
+  for (i = 0; i < matrix_size; i++) {
+	rhs[i] = r->generations[i];
+  }
+
+  // Solve for M2 (equation 23; WFES)
+  iparm[11] = 2;
+  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
+             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
+             workspace, &error);
+  if (error != 0) {
+    printf("ERROR during solution: %" PRId64 "\n", error);
+    exit(phase);
+  } else {
+    // Now store M2 as intermediate result (equation 23; WFES)
+    memcpy( _M2, rhs, matrix_size * sizeof(double));
+  }
+
+  /*
+  // Solve for M3 (equation 26; WFES)
+  iparm[11] = 2;
+  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
+             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
+             workspace, &error);
+  if (error != 0) {
+    printf("ERROR during solution: %" PRId64 "\n", error);
+    exit(phase);
+  } else {
+    // Now store M3 as intermediate result (equation 26; WFES)
+    memcpy(_M3, rhs, matrix_size * sizeof(double));
+    }
+  }
+  */
+
+  // Set x-th column of Q
+  for (i = 0; i < matrix_size; i++) {
+	rhs[i]=0;
+  }
+/*
+  int count=0;
+  int start = A->row_index[wf->observed_allele_count-1];
+  int end = A->row_index[wf->observed_allele_count];
+  printf("Check of first rowindex %d and col %d\n", A->row_index[0], A->cols[0]);
+
+  for (i=start; i<end; i++) {
+	if (count == (wf->observed_allele_count-1) ) {
+		rhs[count++] = (A->data[i] * -1) + 1;
+	} else {
+		rhs[count++] = (A->data[i] * -1);
+	}
+	printf("Got A[%d][%d] = %f\n", A->cols[i], wf->observed_allele_count-1, rhs[count-1]);
+  }  */
+
+  int j;
+  for (i=1; i<A->nrows; i++) {
+	for (j=A->row_index[i-1]; j<A->row_index[i]; j++) {
+		if ( A->cols[j] == (wf->observed_allele_count-1) ) {
+			if ( i == wf->observed_allele_count ) {
+				rhs[i-1] = ( A->data[j] * -1) + 1;
+			} else {
+				rhs[i-1] = A->data[j] * -1;
+			}
+			continue;
+		}		
+	}
+  }
+  r->expectedAge = 0;
+  for (i=0; i < matrix_size; i++) {
+	r->expectedAge += ( _M2[i] * rhs[i] );
+  }
+  r->expectedAge /= r->generations[ wf->observed_allele_count -1 ];
+  
+  // printf("Expected age given %d obs is %f\n", wf->observed_allele_count, r->expectedAge);
+
+  // The variance requires a column of Q(I+Q), which is O((2N-1)^2) to compute. Let's skip this.
+  // r->ageVariance = xx / r->generations[ wf->observed_allele_count ]; //
+
+}
 #ifdef DEBUG
   end_time = get_current_time();
   printf("Solution %gs\n", end_time - start_time);
 #endif
-  //
+  
 
   // Calculate the summary statistics
   for (i = 0; i < matrix_size; i++) {
@@ -314,6 +416,35 @@ int main(int argc, char **argv) {
     zero_threshold = 1e-30;
     dkl_clear_errno();
   }
+  
+  wf->selection_mode = dkl_args_parse_int(
+      argc, argv, false, "m", "-m", "--m", "M", "-M", "--M", "selection_mode",
+      "-selection_mode", "--selection_mode", NULL);
+  if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+#ifdef DEBUG
+    println("Using default selection mode: fecundity");
+#endif
+    wf->selection_mode = 0;
+    dkl_clear_errno();
+  }
+  
+  wf->observed_allele_count = dkl_args_parse_int(
+      argc, argv, false, "x", "-x", "--x", "X", "-X", "--X", "observed_allele_count",
+      "-observed_allele_count", "--observed_allele_count", NULL);
+  if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+#ifdef DEBUG
+    println("Defaulting to not calculating allele age");
+#endif
+    wf->observed_allele_count = -1;
+    dkl_clear_errno();
+  }
+
+  // Haploid model check
+  if (wf->selection_mode == 2 ) {
+	// This is needed because we multiply N by 2 throughout for diploid population
+	// (We fix this here and account for it in the WF calculation and the final output)
+	wf->population_size /= 2.0;
+  }
 
   char *generations_file = dkl_args_parse_string(
       argc, argv, false, "g", "-g", "--g", "generations_file",
@@ -357,12 +488,24 @@ int main(int argc, char **argv) {
 
   wfes(wf, results, zero_threshold);
 
+  double gensubRate = 1.0 / ( ( 1.0/(2*wf->population_size * wf->forward_mutation_rate) + results->time_extinction ) * ( 1.0/results->probability_fixation - 1) + ( 1.0/(2*wf->population_size * wf->forward_mutation_rate) ) + results->time_fixation );
+
+  // Correct for halpoid size if necessary
+  if (wf->selection_mode == 2) {
+	wf->population_size *= 2.0;
+  }
   // Output the results
-  printf("%" PRId64 ",%g,%g,%g,%g,%g,%g,%g,%g,%g\n", wf->population_size,
+
+  printf("%" PRId64 ",%g,%g,%g,%g,%g,%g,%g,%g,%g,%g", wf->population_size,
          wf->selection, wf->forward_mutation_rate, wf->backward_mutation_rate,
          wf->dominance_coefficient, results->probability_extinction,
          results->probability_fixation, results->time_extinction,
-         results->time_fixation, results->count_before_extinction);
+         results->time_fixation, results->count_before_extinction, gensubRate);
+
+  if ( wf->observed_allele_count > 0) {
+    printf(",%g", results->expectedAge);
+  }
+  printf("\n");
 
   if (generations_file) {
     FILE *f = fopen(generations_file, "w");
