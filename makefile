@@ -4,20 +4,27 @@
 # For example:
 # 	make cc=ICC MKL_LIB_DIR=/opt/intel/compilers_and_libraries/linux/mkl/intel64 INTEL_OMP_DIR=/opt/intel/compilers_and_libraries/linux/compiler/intel64
 
+uname:=$(shell uname)
+
+ifeq (${uname},darwin)
+CC=clang
+else ifeq (${uname},linux)
 CC=gcc
+endif
+
 RM=rm -rf
 DEBUG=0
 
 SRC_DIR:=src
 MODULES:=${SRC_DIR}/*.h
 # Paths to MKL libraries (shared by default)
-MKL_LIB_DIR:=lib
-INTEL_OMP_DIR:=lib
+MKL_LIB_DIR:=/anaconda/lib
+INTEL_OMP_DIR:=/anaconda/lib
 
 # Default libraries and flags
-FLAGS:=-DMKL_ILP64
+FLAGS:=-DMKL_ILP64 -std=c99
 RPATH:=-rpath,${MKL_LIB_DIR},-rpath,${INTEL_OMP_DIR}
-LIBS:=-lmkl_intel_ilp64 -lmkl_core -lmkl_intel_thread -lpthread -lmkl_avx -lmkl_vml_avx -lm -lrt
+LIBS:=-lmkl_intel_ilp64 -lmkl_core -lmkl_intel_thread -lpthread -lmkl_avx -lmkl_vml_avx -lm
 
 # ICC-specific flags
 ifeq (${CC},icc)
@@ -27,8 +34,13 @@ endif
 
 # GCC-specific flags
 ifeq (${CC},gcc)
-FLAGS+=-m64 -fopenmp --std=c99
+FLAGS+=-m64 -fopenmp
 LINKER_FLAGS=--no-as-needed,${RPATH}
+LIBS+=-liomp5 -ldl -lrt
+endif
+
+ifeq (${CC},clang)
+FLAGS+=-m64
 LIBS+=-liomp5 -ldl
 endif
 

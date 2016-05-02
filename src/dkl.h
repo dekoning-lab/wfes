@@ -15,6 +15,11 @@
 #include <stdarg.h>
 #include <errno.h>
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 #include "dkl_types.h"
 
 #include "mkl_compat.h"
