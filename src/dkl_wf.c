@@ -204,41 +204,46 @@ csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size,
 void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   // Declaration
   DKL_INT matrix_size = (2 * wf->population_size) - 1;
-  DKL_INT mtype = 11;
-  DKL_INT nrhs = 1;
-  void *pt[64];
 
   // Pardiso control parameters
-  DKL_INT iparm[64];
-  DKL_INT maxfct, mnum, phase, error, msglvl;
+  DKL_INT pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_UNSYMMETRIC;
+  DKL_INT pardiso_number_right_hand_sides = 1;
+  void *pardiso_internal[MKL_IFS];
+  DKL_INT pardiso_control[MKL_IFS];
+  DKL_INT pardiso_maximum_factors = 1;
+  DKL_INT pardiso_matrix_number = 1;
+  DKL_INT pardiso_phase;
+  DKL_INT pardiso_error = 0;
+  DKL_INT pardiso_message_level = 0;
 
   // Auxiliary variables
   DKL_INT i;
-  double ddum;  // double dummy
-  DKL_INT idum; // integer dummy
+  double double_dummy;   // double dummy
+  DKL_INT integer_dummy; // integer dummy
 
-  double *rhs = dkl_alloc(matrix_size, double);
+  // Right hand side vector
+  double *y = dkl_alloc(matrix_size, double);
   double *workspace = dkl_alloc(matrix_size, double);
 
   // If allele age
   double *_M2 = dkl_alloc(matrix_size, double);
-  // double *_M3 = dkl_alloc(matrix_size, double);
 
+  // Block size to calculate at once
   DKL_INT block_size;
   if (matrix_size >= 100) {
-    block_size = matrix_size * 0.01;
+    block_size = (DKL_INT)(matrix_size * 0.01); // 1% per block
   } else {
     block_size = matrix_size;
   }
 
-  double start_time, end_time, global_start_time, global_end_time;
-
 #ifdef DEBUG
+  double start_time, end_time, global_start_time, global_end_time;
   MKL_Peak_Mem_Usage(MKL_PEAK_MEM_ENABLE);
   global_start_time = get_current_time();
   start_time = get_current_time();
 #endif
 
+  // Build sparse WF matrix
   csr_sparse_matrix *A = wf_matrix_csr(wf, block_size, zero_threshold);
 
 #ifdef DEBUG
@@ -247,71 +252,62 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   printf("Building matrix: %gs\n", end_time - start_time);
 #endif
 
-  for (i = 0; i < matrix_size; i++) {
-    rhs[i] = 0;
-  }
-
   // RHS for solving for column of B
   for (i = 0; i < matrix_size; i++) {
     double q = wf_sampling_coefficient(wf, i + 1);
-    rhs[i] = pow(1 - q, 2 * wf->population_size);
+    y[i] = pow(1 - q, 2 * wf->population_size);
   }
 
   // Setup Pardiso control parameters
   for (i = 0; i < 64; i++) {
-    iparm[i] = 0;
+    pardiso_control[i] = 0;
+    pardiso_internal[i] = 0;
   }
 
-  iparm[0] = 1; // No solver default
-  iparm[1] = 3; // Fill-in reordering from METIS
-  iparm[2] = 1;
-  iparm[3] = 0;   // No iterative-direct algorithm
-  iparm[4] = 0;   // No user fill-in reducing permutation
-  iparm[5] = 1;   // Don't write solution into x
-  iparm[6] = 0;   // Not in use
-  iparm[7] = 2;   // Max numbers of iterative refinement steps
-  iparm[8] = 0;   // Not in use
-  iparm[9] = 20;  // Perturb the pivot elements with 1E-20
-  iparm[10] = 1;  // Use nonsymmetric permutation and scaling MPS
-  iparm[11] = 0;  // Conjugate transposed/transpose solve
-  iparm[12] = 1;  // Maximum weighted matching algorithm is switched-on
-  iparm[13] = 0;  // Output: Number of perturbed pivots
-  iparm[14] = 0;  // Not in use
-  iparm[15] = 0;  // Not in use
-  iparm[16] = 0;  // Not in use
-  iparm[17] = -1; // Output: Number of nonzeros in the factor LU
-  iparm[18] = -1; // Output: Mflops for LU factorization
-  iparm[19] = 0;  // Output: Numbers of CG Iterations
-  iparm[26] = 0;  // Double precision
-  iparm[34] = 1;
-  iparm[59] = 1;
+  pardiso_control[0] = 1;  // No solver default
+  pardiso_control[1] = 3;  // Fill-in reordering from METIS
+  pardiso_control[2] = 1;  //
+  pardiso_control[3] = 0;  // No iterative-direct algorithm
+  pardiso_control[4] = 0;  // No user fill-in reducing permutation
+  pardiso_control[5] = 1;  // Don't write solution into x
+  pardiso_control[6] = 0;  // Not in use
+  pardiso_control[7] = 2;  // Max numbers of iterative refinement steps
+  pardiso_control[8] = 0;  // Not in use
+  pardiso_control[9] = 20; // Perturb the pivot elements with 1E-20
+  pardiso_control[10] = 1; // Use nonsymmetric permutation and scaling MPS
+  pardiso_control[11] = 0; // Conjugate transposed/transpose solve
+  pardiso_control[12] = 1; // Maximum weighted matching algorithm is switched-on
+  pardiso_control[13] = 0; // Output: Number of perturbed pivots
+  pardiso_control[14] = 0; // Not in use
+  pardiso_control[15] = 0; // Not in use
+  pardiso_control[16] = 0; // Not in use
+  pardiso_control[17] = -1; // Output: Number of nonzeros in the factor LU
+  pardiso_control[18] = -1; // Output: Mflops for LU factorization
+  pardiso_control[19] = 0;  // Output: Numbers of CG Iterations
+  pardiso_control[26] = 0;  // Double precision
+  pardiso_control[34] = 1;  //
+  pardiso_control[59] = 1;  //
 
 #ifdef DEBUG
-  msglvl = 1; // Print statistical information
-#else
-  msglvl = 0; // Print statistical information in file
+  pardiso_message_level = 1; // Print statistical information
 #endif
 
-  maxfct = 1; // Maximum number of numerical factorizations.
-  mnum = 1;   // Which factorization to use.
-  error = 0;  // Initialize error flag
-
-  for (i = 0; i < 64; i++) {
-    pt[i] = 0;
-  }
   //}}}1
 
   // Symbolic Factorization
-  phase = 11;
+  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_ANALYSIS;
 #ifdef DEBUG
   start_time = get_current_time();
 #endif
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum,
-             &error);
-  if (error != 0) {
-    printf("ERROR during symbolic factorization: %" PRId64 "\n", error);
-    exit(phase);
+  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
+             &pardiso_matrix_type, &pardiso_phase, &matrix_size, A->data,
+             A->row_index, A->cols, &integer_dummy,
+             &pardiso_number_right_hand_sides, pardiso_control,
+             &pardiso_message_level, &double_dummy, &double_dummy,
+             &pardiso_error);
+  if (pardiso_error != 0) {
+    printf("ERROR during symbolic factorization: %" PRId64 "\n", pardiso_error);
+    exit(pardiso_phase);
   }
 #ifdef DEBUG
   end_time = get_current_time();
@@ -319,16 +315,19 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 #endif
 
   // Numeric factorization
-  phase = 22;
+  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_NUMERICAL_FACTORIZATION;
 #ifdef DEBUG
   start_time = get_current_time();
 #endif
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum,
-             &error);
-  if (error != 0) {
-    printf("ERROR during numeric factorization: %" PRId64 "\n", error);
-    exit(phase);
+  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
+             &pardiso_matrix_type, &pardiso_phase, &matrix_size, A->data,
+             A->row_index, A->cols, &integer_dummy,
+             &pardiso_number_right_hand_sides, pardiso_control,
+             &pardiso_message_level, &double_dummy, &double_dummy,
+             &pardiso_error);
+  if (pardiso_error != 0) {
+    printf("ERROR during numeric factorization: %" PRId64 "\n", pardiso_error);
+    exit(pardiso_phase);
   }
 #ifdef DEBUG
   end_time = get_current_time();
@@ -336,24 +335,25 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 #endif
 
   // Solution
-  phase = 33;
+  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_SOLVE_ITERATIVE_REFINEMENT;
 
-  iparm[11] = 0;
+  pardiso_control[11] = 0;
 #ifdef DEBUG
   start_time = get_current_time();
 #endif
 
-  // Solve for the second column of B matrix (absorption probs), given rhs=R_2N
+  // Solve for the second column of B matrix (absorption probs), given y=R_0
   // (equation 20 and 8; WFES)
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
-             workspace, &error);
-  if (error != 0) {
-    printf("ERROR during solution: %" PRId64 "\n", error);
-    exit(phase);
+  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
+             &pardiso_matrix_type, &pardiso_phase, &matrix_size, A->data,
+             A->row_index, A->cols, &integer_dummy,
+             &pardiso_number_right_hand_sides, pardiso_control,
+             &pardiso_message_level, y, workspace, &pardiso_error);
+  if (pardiso_error != 0) {
+    printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
+    exit(pardiso_phase);
   } else {
-    // NOTE: This seems backwards; should be fixation_probabilities!
-    memcpy(r->extinction_probabilities, rhs, matrix_size * sizeof(double));
+    memcpy(r->extinction_probabilities, y, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
       if (r->extinction_probabilities[i] < 0) {
         r->extinction_probabilities[i] = 0.0;
@@ -363,21 +363,23 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   }
 
   // Solve for the first row of N -> "generations" (equation 19; WFES)
-  // Set rhs = Ip for p=1 [Note, first index is 1 not 0]
-  rhs[0] = 1.0;
+  // Set y = Ip for p=1 [Note, first index is 1 not 0]
+  y[0] = 1.0;
   for (i = 1; i < matrix_size; i++) {
-    rhs[i] = 0.0;
+    y[i] = 0.0;
   }
-  iparm[11] = 2;
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
-             workspace, &error);
-  if (error != 0) {
-    printf("ERROR during solution: %" PRId64 "\n", error);
-    exit(phase);
+  pardiso_control[11] = 2;
+  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
+             &pardiso_matrix_type, &pardiso_phase, &matrix_size, A->data,
+             A->row_index, A->cols, &integer_dummy,
+             &pardiso_number_right_hand_sides, pardiso_control,
+             &pardiso_message_level, y, workspace, &pardiso_error);
+  if (pardiso_error != 0) {
+    printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
+    exit(pardiso_phase);
   } else {
     //
-    memcpy(r->generations, rhs, matrix_size * sizeof(double));
+    memcpy(r->generations, y, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
       if (r->generations[i] < 0) {
         r->generations[i] = 0;
@@ -388,41 +390,47 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   if (wf->observed_allele_count > 0) {
 
     for (i = 0; i < matrix_size; i++) {
-      rhs[i] = r->generations[i];
+      y[i] = r->generations[i];
     }
 
     // Solve for M2 (equation 23; WFES)
-    iparm[11] = 2;
-    pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-               A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
-               workspace, &error);
-    if (error != 0) {
-      printf("ERROR during solution: %" PRId64 "\n", error);
-      exit(phase);
+    pardiso_control[11] = 2;
+    pardiso_64(pardiso_internal, &pardiso_maximum_factors,
+               &pardiso_matrix_number, &pardiso_matrix_type, &pardiso_phase,
+               &matrix_size, A->data, A->row_index, A->cols, &integer_dummy,
+               &pardiso_number_right_hand_sides, pardiso_control,
+               &pardiso_message_level, y, workspace, &pardiso_error);
+    if (pardiso_error != 0) {
+      printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
+      exit(pardiso_phase);
     } else {
       // Now store M2 as intermediate result (equation 23; WFES)
-      memcpy(_M2, rhs, matrix_size * sizeof(double));
+      memcpy(_M2, y, matrix_size * sizeof(double));
     }
 
     /*
     // Solve for M3 (equation 26; WFES)
-    iparm[11] = 2;
-    pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-               A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
-               workspace, &error);
-    if (error != 0) {
-      printf("ERROR during solution: %" PRId64 "\n", error);
-      exit(phase);
+    pardiso_control[11] = 2;
+    pardiso_64(pardiso_internal, &pardiso_maximum_factors,
+    &pardiso_matrix_number, &pardiso_matrix_type, &pardiso_phase, &matrix_size,
+    A->data,
+               A->row_index, A->cols, &integer_dummy,
+    &pardiso_number_right_hand_sides, pardiso_control, &pardiso_message_level,
+    y,
+               workspace, &pardiso_error);
+    if (pardiso_error != 0) {
+      printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
+      exit(pardiso_phase);
     } else {
       // Now store M3 as intermediate result (equation 26; WFES)
-      memcpy(_M3, rhs, matrix_size * sizeof(double));
+      memcpy(_M3, y, matrix_size * sizeof(double));
       }
     }
     */
 
     // Set x-th column of Q
     for (i = 0; i < matrix_size; i++) {
-      rhs[i] = 0;
+      y[i] = 0;
     }
     /*
       int count=0;
@@ -433,12 +441,12 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
       for (i=start; i<end; i++) {
             if (count == (wf->observed_allele_count-1) ) {
-                    rhs[count++] = (A->data[i] * -1) + 1;
+                    y[count++] = (A->data[i] * -1) + 1;
             } else {
-                    rhs[count++] = (A->data[i] * -1);
+                    y[count++] = (A->data[i] * -1);
             }
             printf("Got A[%d][%d] = %f\n", A->cols[i],
-      wf->observed_allele_count-1, rhs[count-1]);
+      wf->observed_allele_count-1, y[count-1]);
       }  */
 
     int j;
@@ -446,9 +454,9 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       for (j = A->row_index[i - 1]; j < A->row_index[i]; j++) {
         if (A->cols[j] == (wf->observed_allele_count - 1)) {
           if (i == wf->observed_allele_count) {
-            rhs[i - 1] = (A->data[j] * -1) + 1;
+            y[i - 1] = (A->data[j] * -1) + 1;
           } else {
-            rhs[i - 1] = A->data[j] * -1;
+            y[i - 1] = A->data[j] * -1;
           }
           continue;
         }
@@ -456,7 +464,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
     r->expectedAge = 0;
     for (i = 0; i < matrix_size; i++) {
-      r->expectedAge += (_M2[i] * rhs[i]);
+      r->expectedAge += (_M2[i] * y[i]);
     }
     r->expectedAge /= r->generations[wf->observed_allele_count - 1];
 
@@ -498,12 +506,15 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   }
 
   // Memory release
-  phase = -1; // Release internal memory
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, &ddum,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, &ddum, &ddum,
-             &error);
+  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_RELEASE_MEMORY_ALL;
+  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
+             &pardiso_matrix_type, &pardiso_phase, &matrix_size, &double_dummy,
+             A->row_index, A->cols, &integer_dummy,
+             &pardiso_number_right_hand_sides, pardiso_control,
+             &pardiso_message_level, &double_dummy, &double_dummy,
+             &pardiso_error);
 
-  dkl_dealloc(rhs);
+  dkl_dealloc(y);
   dkl_dealloc(workspace);
 
   dkl_dealloc(A->data);

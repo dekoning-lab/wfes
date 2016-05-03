@@ -3,11 +3,11 @@
 void print_help(void) {
   printf("WFES: Wright-Fisher model solver\n"
          "USAGE:\n"
-         " -N, --population_size:        Population size\n"
+         " -n, --population_size:        Population size\n"
          " -s, --selection_coefficient:  Selection coefficient\n"
          " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -v, --backward_mutation_rate: Mutation rate from A to a\n"
-         " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
+         " -h, --dominance_coefficient:  Proportion of selection Aa recieves\n"
          "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
          "haploid)\n"
          "[-x, --observed_allele_count]: Observed count in the population (for "
@@ -30,8 +30,7 @@ void print_help(void) {
 */
 int main(int argc, char **argv) {
   // Parse the command line
-  bool help = dkl_args_parse_flag(argc, argv, false, "h", "-h", "--h", "help",
-                                  "-help", "--help", NULL);
+  bool help = dkl_args_parse_flag(argc, argv, false, "--help", NULL);
   if (help) {
     print_help();
     exit(DKL_HELP_EXIT);
@@ -41,26 +40,20 @@ int main(int argc, char **argv) {
   wf_parameters *wf = wf_parameters_new();
 
   // Parse the required arguments
-  wf->population_size = dkl_args_parse_int(
-      argc, argv, true, "n", "-n", "--n", "N", "-N", "--N", "population_size",
-      "-population_size", "--population_size", NULL);
-  wf->selection = dkl_args_parse_double(
-      argc, argv, true, "s", "-s", "--s", "selection_coefficient",
-      "-selection_coefficient", "--selection_coefficient", NULL);
-  wf->forward_mutation_rate = dkl_args_parse_double(
-      argc, argv, true, "u", "-u", "--u", "forward_mutation_rate",
-      "-forward_mutation_rate", "--forward_mutation_rate", NULL);
+  wf->population_size =
+      dkl_args_parse_int(argc, argv, true, "-n", "--population_size", NULL);
+  wf->selection =
+      dkl_args_parse_double(argc, argv, true, "-s", "--selection", NULL);
+  wf->forward_mutation_rate =
+      dkl_args_parse_double(argc, argv, true, "-u", "--forward_mutation", NULL);
   wf->backward_mutation_rate = dkl_args_parse_double(
-      argc, argv, true, "v", "-v", "--v", "backward_mutation_rate",
-      "-backward_mutation_rate", "--backward_mutation_rate", NULL);
-  wf->dominance_coefficient = dkl_args_parse_double(
-      argc, argv, true, "d", "-d", "--d", "dominance_coefficient",
-      "-dominance_coefficient", "--dominance_coefficient", NULL);
+      argc, argv, true, "-v", "--backward_mutation", NULL);
+  wf->dominance_coefficient =
+      dkl_args_parse_double(argc, argv, true, "-h", "--dominance", NULL);
 
   // Parse optional parameters
-  double zero_threshold = dkl_args_parse_double(
-      argc, argv, false, "z", "-z", "--z", "zero_threshold", "-zero_threshold",
-      "--zero_threshold", NULL);
+  double zero_threshold =
+      dkl_args_parse_double(argc, argv, false, "-z", "--zero_threshold", NULL);
   if (dkl_errno == DKL_OPTION_NOT_FOUND) {
 #ifdef DEBUG
     println("Using default threshold: 1e-30");
@@ -69,9 +62,8 @@ int main(int argc, char **argv) {
     dkl_clear_errno();
   }
 
-  wf->selection_mode = dkl_args_parse_int(
-      argc, argv, false, "m", "-m", "--m", "M", "-M", "--M", "selection_mode",
-      "-selection_mode", "--selection_mode", NULL);
+  wf->selection_mode =
+      dkl_args_parse_int(argc, argv, false, "-m", "--selection_mode", NULL);
   if (dkl_errno == DKL_OPTION_NOT_FOUND) {
 #ifdef DEBUG
     println("Using default selection mode: fecundity");
@@ -80,10 +72,8 @@ int main(int argc, char **argv) {
     dkl_clear_errno();
   }
 
-  wf->observed_allele_count =
-      dkl_args_parse_int(argc, argv, false, "x", "-x", "--x", "X", "-X", "--X",
-                         "observed_allele_count", "-observed_allele_count",
-                         "--observed_allele_count", NULL);
+  wf->observed_allele_count = dkl_args_parse_int(
+      argc, argv, false, "-x", "--observed_allele_count", NULL);
   if (dkl_errno == DKL_OPTION_NOT_FOUND) {
 #ifdef DEBUG
     println("Defaulting to not calculating allele age");
@@ -101,24 +91,20 @@ int main(int argc, char **argv) {
     wf->population_size /= 2.0;
   }
 
-  char *generations_file = dkl_args_parse_string(
-      argc, argv, false, "g", "-g", "--g", "generations_file",
-      "-generations_file", "--generations_file", "sojourn_time_file",
-      "-sojourn_time_file", "--sojourn_time_file", NULL);
-  char *extinction_file = dkl_args_parse_string(
-      argc, argv, false, "e", "-e", "--e", "extinction_file",
-      "-extinction_file", "--extinction_file", NULL);
-  char *fixation_file = dkl_args_parse_string(
-      argc, argv, false, "f", "-f", "--f", "fixation_file", "-fixation_file",
-      "--fixation_file", NULL);
+  char *generations_file =
+      dkl_args_parse_string(argc, argv, false, "-g", "--generations_file",
+                            "--sojourn_time_file", NULL);
+  char *extinction_file =
+      dkl_args_parse_string(argc, argv, false, "-e", "--extinction_file", NULL);
+  char *fixation_file =
+      dkl_args_parse_string(argc, argv, false, "-f", "--fixation_file", NULL);
 
-  bool force = dkl_args_parse_flag(argc, argv, false, "force", "-force",
-                                   "--force", NULL);
+  bool force = dkl_args_parse_flag(argc, argv, false, "--force", NULL);
   if (!force) {
     if (wf->population_size > 500000) {
       error_print("The population_size parameter is too large - the "
                   "computation might take a very long time");
-      println("Use `--force` to override");
+      error_print("Use `--force` to override");
       exit(DKL_PARAM_ERROR);
     }
     double max_mutation_rate = 1.0 / (2.0 * wf->population_size);
@@ -126,13 +112,13 @@ int main(int argc, char **argv) {
         wf->backward_mutation_rate > max_mutation_rate) {
       error_print(
           "The mutation rate might violate the Wright-Fisher assumptions");
-      println("Use `--force` to override");
+      error_print("Use `--force` to override");
       exit(DKL_PARAM_ERROR);
     }
     if (zero_threshold > 1e-10) {
       error_print("The zero threshold is too high - this will produce "
                   "inaccurate results");
-      println("Use `--force` to override");
+      error_print("Use `--force` to override");
       exit(DKL_PARAM_ERROR);
     }
   }
