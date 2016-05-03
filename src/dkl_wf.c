@@ -266,7 +266,6 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   pardiso_control[0] = 1;  // No solver default
   pardiso_control[1] = 3;  // Fill-in reordering from METIS
-  pardiso_control[2] = 1;  //
   pardiso_control[3] = 0;  // No iterative-direct algorithm
   pardiso_control[4] = 0;  // No user fill-in reducing permutation
   pardiso_control[5] = 1;  // Don't write solution into x
