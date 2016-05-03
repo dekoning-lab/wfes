@@ -8,3 +8,5 @@ params.txt
 .DS_Store
 __pycache__/
 paper_table/
+*.so
+build/
