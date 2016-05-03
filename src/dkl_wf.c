@@ -260,35 +260,34 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   // Setup Pardiso control parameters
   for (i = 0; i < 64; i++) {
-    pardiso_control[i] = 0;
-    pardiso_internal[i] = 0;
+    pardiso_control[i] = MKL_PARDISO_DEFAULT;
+    pardiso_internal[i] = MKL_PARDISO_DEFAULT;
   }
 
-  pardiso_control[0] = 1;  // No solver default
-  pardiso_control[1] = 3;  // Fill-in reordering from METIS
-  pardiso_control[3] = 0;  // No iterative-direct algorithm
-  pardiso_control[4] = 0;  // No user fill-in reducing permutation
-  pardiso_control[5] = 1;  // Don't write solution into x
-  pardiso_control[6] = 0;  // Not in use
-  pardiso_control[7] = 2;  // Max numbers of iterative refinement steps
-  pardiso_control[8] = 0;  // Not in use
-  pardiso_control[9] = 20; // Perturb the pivot elements with 1E-20
-  pardiso_control[10] = 1; // Use nonsymmetric permutation and scaling MPS
-  pardiso_control[11] = 0; // Conjugate transposed/transpose solve
-  pardiso_control[12] = 1; // Maximum weighted matching algorithm is switched-on
-  pardiso_control[13] = 0; // Output: Number of perturbed pivots
-  pardiso_control[14] = 0; // Not in use
-  pardiso_control[15] = 0; // Not in use
-  pardiso_control[16] = 0; // Not in use
-  pardiso_control[17] = -1; // Output: Number of nonzeros in the factor LU
-  pardiso_control[18] = -1; // Output: Mflops for LU factorization
-  pardiso_control[19] = 0;  // Output: Numbers of CG Iterations
-  pardiso_control[26] = 0;  // Double precision
-  pardiso_control[34] = 1;  //
-  pardiso_control[59] = 1;  //
+  pardiso_control[MKL_PARDISO_DEFAULT_SETTINGS] = MKL_PARDISO_FALSE;
+  pardiso_control[MKL_PARDISO_FILL_IN_REDUCING_ORDERING_OPTION] =
+      MKL_PARDISO_FILL_IN_REDUCING_ORDERING_NESTED_DISSECTION_OMP;
+  pardiso_control[MKL_PARDISO_RETURN_OPTION] = MKL_PARDISO_RETURN_OVERRIDE;
+  pardiso_control[MKL_PARDISO_ITERATIVE_REFINEMENT_MAX] = 2;
+  pardiso_control[MKL_PARDISO_PIVOTING_PERTURBATION] =
+      20; // Perturb the pivot elements with 1E-20
+  pardiso_control[MKL_PARDISO_SCALING_OPTION] = MKL_PARDISO_SCALING_ENABLE;
+  pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_DEFAULT;
+  pardiso_control[MKL_PARDISO_WEIGHTED_MATCHING_OPTION] =
+      MKL_PARDISO_WEIGHTED_MATCHING_ENABLE;
+  pardiso_control[MKL_PARDISO_PRECISION_OPTION] = MKL_PARDISO_PRECISION_DOUBLE;
+  pardiso_control[MKL_PARDISO_INDEXING_OPTION] = MKL_PARDISO_INDEXING_ZERO;
+  pardiso_control[MKL_PARDISO_OOC_OPTION] = MKL_PARDISO_OOC_OVERFLOW;
 
 #ifdef DEBUG
   pardiso_message_level = 1; // Print statistical information
+  pardiso_control[MKL_PARDISO_REPORT_NNZ_FACTORS] = MKL_PARDISO_REPORT_ENABLE;
+  pardiso_control[MKL_PARDISO_REPORT_FLOP_FACTOR_PHASE] =
+      MKL_PARDISO_REPORT_ENABLE;
+  pardiso_control[MKL_PARDISO_REPORT_CGS_CG_DIAGNOSTIC] =
+      MKL_PARDISO_REPORT_ENABLE;
+  pardiso_control[MKL_PARDISO_MATRIX_CHECK_OPTION] =
+      MKL_PARDISO_MATRIX_CHECK_ENABLE;
 #endif
 
   //}}}1
@@ -367,7 +366,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   for (i = 1; i < matrix_size; i++) {
     y[i] = 0.0;
   }
-  pardiso_control[11] = 2;
+  pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
   pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
              &pardiso_matrix_type, &pardiso_phase, &matrix_size, A->data,
              A->row_index, A->cols, &integer_dummy,
@@ -393,7 +392,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
 
     // Solve for M2 (equation 23; WFES)
-    pardiso_control[11] = 2;
+    pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
     pardiso_64(pardiso_internal, &pardiso_maximum_factors,
                &pardiso_matrix_number, &pardiso_matrix_type, &pardiso_phase,
                &matrix_size, A->data, A->row_index, A->cols, &integer_dummy,
