@@ -4,7 +4,8 @@
 #define DKL_SPARSE_MATRIX_H
 
 /**
- * csr_sparse_matrix - compressed sparse row matrix representation (3-array intel variant)
+ * csr_sparse_matrix - compressed sparse row matrix representation (3-array
+ * intel variant)
  * Implemented according to: https://software.intel.com/en-us/node/599882
  */
 typedef struct csr_sparse_matrix {

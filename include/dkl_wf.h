@@ -12,8 +12,10 @@ typedef struct wf_parameters_t {
   double backward_mutation_rate; // Mutation rate from 'a' to 'A'
   double dominance_coefficient;  // Proportion of selective advantage of 'Aa'
                                  // over 'aa'
-  int    selection_mode;	 // 0: fecundity; 1: viability, 2: haploid fecundity
-  int    observed_allele_count;	 // (If allele age requested, this is the observed count)
+
+  int selection_mode;        // 0: fecundity; 1: viability, 2: haploid fecundity
+  int observed_allele_count; // (If allele age requested, this is the observed
+                             // count)
 } wf_parameters;
 
 wf_parameters *wf_parameters_new(void);
@@ -34,8 +36,9 @@ typedef struct wf_statistics_t {
   double *fixation_probabilities;   // Probability of fixation vector
   double *generations;              // Sojourn time vector
 
-  double expectedAge;		    // Expected allele age (DeSanctis and de Koning, 2016)
-  double ageVariance;		    // Expected allele age-variance (DeSanctis and de Koning, 2016)
+  double expectedAge; // Expected allele age (DeSanctis and de Koning, 2016)
+  double ageVariance; // Expected allele age-variance (DeSanctis and de Koning,
+                      // 2016)
 } wf_statistics;
 
 wf_statistics *wf_statistics_new(DKL_INT population_size);
@@ -57,7 +60,8 @@ void wf_statistics_del(wf_statistics *r);
 double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i);
 
 /**
- * wf_sampling_coefficient_viability: calculate the binomial sampling coefficient (psi)
+ * wf_sampling_coefficient_viability: calculate the binomial sampling
+ * coefficient (psi)
  * for the Wright-Fisher matrix using viability selection (de Koning)
  *
  * @param[in] N Population size (range: 2-Inf)
@@ -72,8 +76,10 @@ double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i);
 double wf_sampling_coefficient_viability(wf_parameters *wf, DKL_INT i);
 
 /**
- * wf_sampling_coefficient_haploid: calculate the binomial sampling coefficient (psi)
- * for the Wright-Fisher matrix using haploid selection+mutation and fecundity selection (de Koning)
+ * wf_sampling_coefficient_haploid: calculate the binomial sampling coefficient
+ * (psi)
+ * for the Wright-Fisher matrix using haploid selection+mutation and fecundity
+ * selection (de Koning)
  *
  * @param[in] N Population size (range: 2-Inf)
  * @param[in] s Selection coefficient (range: -1:Inf)
@@ -104,7 +110,10 @@ double wf_sampling_coefficient_haploid(wf_parameters *wf, DKL_INT i);
  * @param[in] old_size Number of non-zero elements in Q before the block in
  * built
  */
-void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset, DKL_INT block_size, double *buffer, double *binom, csr_sparse_matrix *Q, DKL_INT *current_size, DKL_INT *global_nnz, DKL_INT *old_size);
+void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset,
+                   DKL_INT block_size, double *buffer, double *binom,
+                   csr_sparse_matrix *Q, DKL_INT *current_size,
+                   DKL_INT *global_nnz, DKL_INT *old_size);
 
 /**
  * wf_matrix_csr: build the Wright-Fisher matrix
@@ -119,7 +128,8 @@ void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset, DKL_
  *
  * @return The CSR of the Wright-Fisher matrix
  */
-csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size, double threshold);
+csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size,
+                                 double threshold);
 
 /**
  * wfes: solve for conditional times to absorption, sojourn times etc.

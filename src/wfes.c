@@ -8,8 +8,10 @@ void print_help(void) {
          " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -v, --backward_mutation_rate: Mutation rate from A to a\n"
          " -d, --dominance_coefficient:  Proportion of selection Aa recieves\n"
-         "[-m, --selection_mode]:        Selection mode (1: viability; 2: haploid)\n"
-         "[-x, --observed_allele_count]: Observed count in the population (for allele age)\n"
+         "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
+         "haploid)\n"
+         "[-x, --observed_allele_count]: Observed count in the population (for "
+         "allele age)\n"
          "[-z, --zero_threshold]:        Any number below this is considered "
          "0. Default 1e-25\n"
          "[-g, --generations_file]:      Generations spent with a given number "
@@ -22,7 +24,6 @@ void print_help(void) {
          "checks\n"
          "[--help]:                      Print this message and exit\n");
 }
-
 
 /**
 * main
@@ -79,9 +80,10 @@ int main(int argc, char **argv) {
     dkl_clear_errno();
   }
 
-  wf->observed_allele_count = dkl_args_parse_int(
-      argc, argv, false, "x", "-x", "--x", "X", "-X", "--X", "observed_allele_count",
-      "-observed_allele_count", "--observed_allele_count", NULL);
+  wf->observed_allele_count =
+      dkl_args_parse_int(argc, argv, false, "x", "-x", "--x", "X", "-X", "--X",
+                         "observed_allele_count", "-observed_allele_count",
+                         "--observed_allele_count", NULL);
   if (dkl_errno == DKL_OPTION_NOT_FOUND) {
 #ifdef DEBUG
     println("Defaulting to not calculating allele age");
@@ -91,10 +93,12 @@ int main(int argc, char **argv) {
   }
 
   // Haploid model check
-  if (wf->selection_mode == 2 ) {
-	// This is needed because we multiply N by 2 throughout for diploid population
-	// (We fix this here and account for it in the WF calculation and the final output)
-	wf->population_size /= 2.0;
+  if (wf->selection_mode == 2) {
+    // This is needed because we multiply N by 2 throughout for diploid
+    // population
+    // (We fix this here and account for it in the WF calculation and the final
+    // output)
+    wf->population_size /= 2.0;
   }
 
   char *generations_file = dkl_args_parse_string(
@@ -139,11 +143,16 @@ int main(int argc, char **argv) {
 
   wf_solve(wf, results, zero_threshold);
 
-  double gensubRate = 1.0 / ( ( 1.0/(2*wf->population_size * wf->forward_mutation_rate) + results->time_extinction ) * ( 1.0/results->probability_fixation - 1) + ( 1.0/(2*wf->population_size * wf->forward_mutation_rate) ) + results->time_fixation );
+  double gensubRate =
+      1.0 / ((1.0 / (2 * wf->population_size * wf->forward_mutation_rate) +
+              results->time_extinction) *
+                 (1.0 / results->probability_fixation - 1) +
+             (1.0 / (2 * wf->population_size * wf->forward_mutation_rate)) +
+             results->time_fixation);
 
   // Correct for halpoid size if necessary
   if (wf->selection_mode == 2) {
-	wf->population_size *= 2.0;
+    wf->population_size *= 2.0;
   }
   // Output the results
 
@@ -153,7 +162,7 @@ int main(int argc, char **argv) {
          results->probability_fixation, results->time_extinction,
          results->time_fixation, results->count_before_extinction, gensubRate);
 
-  if ( wf->observed_allele_count > 0) {
+  if (wf->observed_allele_count > 0) {
     printf(",%g", results->expectedAge);
   }
   printf("\n");

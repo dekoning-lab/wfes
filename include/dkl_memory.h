@@ -13,6 +13,9 @@ void *__dkl_alloc(int64_t n_elements, size_t type_size);
 #define dkl_del(PTR) free((PTR))
 #define dkl_realloc(PTR, SIZE, TYPE) realloc((PTR), (SIZE) * sizeof(TYPE))
 
-#define check_mem(A) if (!(A)) {error_print("Memory not allocated");}
+#define check_mem(A)                                                           \
+  if (!(A)) {                                                                  \
+    error_print("Memory not allocated");                                       \
+  }
 
 #endif /* DKL_MEMORY_H */

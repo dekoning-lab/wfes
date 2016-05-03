@@ -1,6 +1,5 @@
 #include "dkl_wf.h"
 
-
 wf_statistics *wf_statistics_new(DKL_INT population_size) {
   wf_statistics *r = dkl_new(wf_statistics);
 
@@ -30,9 +29,7 @@ wf_parameters *wf_parameters_new(void) {
   return wf;
 }
 
-void wf_parameters_del(wf_parameters *wf) {
-  dkl_del(wf);
-}
+void wf_parameters_del(wf_parameters *wf) { dkl_del(wf); }
 
 double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
   double a = (1 + wf->selection) * (i * i);
@@ -45,13 +42,17 @@ double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
 }
 
 double wf_sampling_coefficient_viability(wf_parameters *wf, DKL_INT i) {
-  double x = i/(2.0*wf->population_size);
+  double x = i / (2.0 * wf->population_size);
   double v = wf->forward_mutation_rate;
   double u = wf->backward_mutation_rate;
   double h = wf->dominance_coefficient;
   double s = wf->selection;
 
-  double psi = ( ( -v + (-1 + u + v)*x ) * (1 + s * (h + v - h*v + (h-1)*(v+u-1)*x) ) ) / ( -1+s * (-v+(-1+u+v)*x ) * (2*h+v-2*h*v+( 2*h-1 ) * (v+u-1) * x ) );
+  double psi = ((-v + (-1 + u + v) * x) *
+                (1 + s * (h + v - h * v + (h - 1) * (v + u - 1) * x))) /
+               (-1 +
+                s * (-v + (-1 + u + v) * x) *
+                    (2 * h + v - 2 * h * v + (2 * h - 1) * (v + u - 1) * x));
   return psi;
 }
 
@@ -61,7 +62,7 @@ double wf_sampling_coefficient_haploid(wf_parameters *wf, DKL_INT i) {
   double u = wf->backward_mutation_rate;
   double s = wf->selection;
 
-  double psi = ( i * (s+1) * (1-u) + (N-i)*v ) / ( i * (1+s) + N-i );
+  double psi = (i * (s + 1) * (1 - u) + (N - i) * v) / (i * (1 + s) + N - i);
   return psi;
 }
 
@@ -76,11 +77,11 @@ void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset,
 
     double lq;
     if (wf->selection_mode == 1) {
-	lq = wf_sampling_coefficient_viability(wf, row_offset + i + 1);
+      lq = wf_sampling_coefficient_viability(wf, row_offset + i + 1);
     } else if (wf->selection_mode == 2) {
-	lq = wf_sampling_coefficient_haploid(wf, row_offset + i + 1);
+      lq = wf_sampling_coefficient_haploid(wf, row_offset + i + 1);
     } else {
-	lq = wf_sampling_coefficient(wf, row_offset + i + 1);
+      lq = wf_sampling_coefficient(wf, row_offset + i + 1);
     }
 
     DKL_INT local_nnz = 0;
@@ -247,7 +248,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 #endif
 
   for (i = 0; i < matrix_size; i++) {
-        rhs[i]=0;
+    rhs[i] = 0;
   }
 
   // RHS for solving for column of B
@@ -342,7 +343,8 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   start_time = get_current_time();
 #endif
 
-  // Solve for the second column of B matrix (absorption probs), given rhs=R_2N (equation 20 and 8; WFES)
+  // Solve for the second column of B matrix (absorption probs), given rhs=R_2N
+  // (equation 20 and 8; WFES)
   pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
              A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
              workspace, &error);
@@ -383,90 +385,92 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
   }
 
-  if ( wf->observed_allele_count > 0) {
+  if (wf->observed_allele_count > 0) {
 
-  for (i = 0; i < matrix_size; i++) {
-	rhs[i] = r->generations[i];
-  }
-
-  // Solve for M2 (equation 23; WFES)
-  iparm[11] = 2;
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
-             workspace, &error);
-  if (error != 0) {
-    printf("ERROR during solution: %" PRId64 "\n", error);
-    exit(phase);
-  } else {
-    // Now store M2 as intermediate result (equation 23; WFES)
-    memcpy( _M2, rhs, matrix_size * sizeof(double));
-  }
-
-  /*
-  // Solve for M3 (equation 26; WFES)
-  iparm[11] = 2;
-  pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
-             A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
-             workspace, &error);
-  if (error != 0) {
-    printf("ERROR during solution: %" PRId64 "\n", error);
-    exit(phase);
-  } else {
-    // Now store M3 as intermediate result (equation 26; WFES)
-    memcpy(_M3, rhs, matrix_size * sizeof(double));
+    for (i = 0; i < matrix_size; i++) {
+      rhs[i] = r->generations[i];
     }
+
+    // Solve for M2 (equation 23; WFES)
+    iparm[11] = 2;
+    pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
+               A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
+               workspace, &error);
+    if (error != 0) {
+      printf("ERROR during solution: %" PRId64 "\n", error);
+      exit(phase);
+    } else {
+      // Now store M2 as intermediate result (equation 23; WFES)
+      memcpy(_M2, rhs, matrix_size * sizeof(double));
+    }
+
+    /*
+    // Solve for M3 (equation 26; WFES)
+    iparm[11] = 2;
+    pardiso_64(pt, &maxfct, &mnum, &mtype, &phase, &matrix_size, A->data,
+               A->row_index, A->cols, &idum, &nrhs, iparm, &msglvl, rhs,
+               workspace, &error);
+    if (error != 0) {
+      printf("ERROR during solution: %" PRId64 "\n", error);
+      exit(phase);
+    } else {
+      // Now store M3 as intermediate result (equation 26; WFES)
+      memcpy(_M3, rhs, matrix_size * sizeof(double));
+      }
+    }
+    */
+
+    // Set x-th column of Q
+    for (i = 0; i < matrix_size; i++) {
+      rhs[i] = 0;
+    }
+    /*
+      int count=0;
+      int start = A->row_index[wf->observed_allele_count-1];
+      int end = A->row_index[wf->observed_allele_count];
+      printf("Check of first rowindex %d and col %d\n", A->row_index[0],
+      A->cols[0]);
+
+      for (i=start; i<end; i++) {
+            if (count == (wf->observed_allele_count-1) ) {
+                    rhs[count++] = (A->data[i] * -1) + 1;
+            } else {
+                    rhs[count++] = (A->data[i] * -1);
+            }
+            printf("Got A[%d][%d] = %f\n", A->cols[i],
+      wf->observed_allele_count-1, rhs[count-1]);
+      }  */
+
+    int j;
+    for (i = 1; i < A->nrows; i++) {
+      for (j = A->row_index[i - 1]; j < A->row_index[i]; j++) {
+        if (A->cols[j] == (wf->observed_allele_count - 1)) {
+          if (i == wf->observed_allele_count) {
+            rhs[i - 1] = (A->data[j] * -1) + 1;
+          } else {
+            rhs[i - 1] = A->data[j] * -1;
+          }
+          continue;
+        }
+      }
+    }
+    r->expectedAge = 0;
+    for (i = 0; i < matrix_size; i++) {
+      r->expectedAge += (_M2[i] * rhs[i]);
+    }
+    r->expectedAge /= r->generations[wf->observed_allele_count - 1];
+
+    // printf("Expected age given %d obs is %f\n", wf->observed_allele_count,
+    // r->expectedAge);
+
+    // The variance requires a column of Q(I+Q), which is O((2N-1)^2) to
+    // compute. Let's skip this.
+    // r->ageVariance = xx / r->generations[ wf->observed_allele_count ]; //
   }
-  */
-
-  // Set x-th column of Q
-  for (i = 0; i < matrix_size; i++) {
-	rhs[i]=0;
-  }
-/*
-  int count=0;
-  int start = A->row_index[wf->observed_allele_count-1];
-  int end = A->row_index[wf->observed_allele_count];
-  printf("Check of first rowindex %d and col %d\n", A->row_index[0], A->cols[0]);
-
-  for (i=start; i<end; i++) {
-	if (count == (wf->observed_allele_count-1) ) {
-		rhs[count++] = (A->data[i] * -1) + 1;
-	} else {
-		rhs[count++] = (A->data[i] * -1);
-	}
-	printf("Got A[%d][%d] = %f\n", A->cols[i], wf->observed_allele_count-1, rhs[count-1]);
-  }  */
-
-  int j;
-  for (i=1; i<A->nrows; i++) {
-	for (j=A->row_index[i-1]; j<A->row_index[i]; j++) {
-		if ( A->cols[j] == (wf->observed_allele_count-1) ) {
-			if ( i == wf->observed_allele_count ) {
-				rhs[i-1] = ( A->data[j] * -1) + 1;
-			} else {
-				rhs[i-1] = A->data[j] * -1;
-			}
-			continue;
-		}
-	}
-  }
-  r->expectedAge = 0;
-  for (i=0; i < matrix_size; i++) {
-	r->expectedAge += ( _M2[i] * rhs[i] );
-  }
-  r->expectedAge /= r->generations[ wf->observed_allele_count -1 ];
-
-  // printf("Expected age given %d obs is %f\n", wf->observed_allele_count, r->expectedAge);
-
-  // The variance requires a column of Q(I+Q), which is O((2N-1)^2) to compute. Let's skip this.
-  // r->ageVariance = xx / r->generations[ wf->observed_allele_count ]; //
-
-}
 #ifdef DEBUG
   end_time = get_current_time();
   printf("Solution %gs\n", end_time - start_time);
 #endif
-
 
   // Calculate the summary statistics
   for (i = 0; i < matrix_size; i++) {
