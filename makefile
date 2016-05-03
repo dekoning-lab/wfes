@@ -16,7 +16,9 @@ RM=rm -rf
 DEBUG=0
 
 SRC_DIR:=src
-MODULES:=${SRC_DIR}/*.h
+INC_DIR:=include
+MODULES:=${SRC_DIR}/*.c
+HEADERS:=${INC_DIR}/*.h
 # Paths to MKL libraries (shared by default)
 MKL_LIB_DIR:=/anaconda/lib
 INTEL_OMP_DIR:=/anaconda/lib
@@ -54,8 +56,8 @@ endif
 all: wfes libwfes.so
 
 
-wfes: ${SRC_DIR}/wfes.c ${MODULES}
-	${CC} $< -o $@ -L${MKL_LIB_DIR} -Wl,${LINKER_FLAGS} ${FLAGS} ${LIBS}
+wfes: ${MODULES} ${HEADERS}
+	${CC} ${MODULES} -o $@ -I${INC_DIR} -L${MKL_LIB_DIR} -Wl,${LINKER_FLAGS} ${FLAGS} ${LIBS}
 
 libwfes.so: ${SRC_DIR}/wfes.c ${MODULES}
 	${CC} -shared -fPIC $< -o $@ -L${MKL_LIB_DIR} -Wl,${LINKER_FLAGS} ${FLAGS} ${LIBS}
@@ -64,4 +66,10 @@ params.txt: generate_params.py
 	python $< > $@
 
 clean:
-	${RM} wfes libwfes.so __pycache__
+	${RM} wfes *.so __pycache__
+
+cython_extension: wfes.pyx setup.py
+	python setup.py build_ext --inplace
+
+clean_cython:
+	${RM} wfes.c build/ *.so

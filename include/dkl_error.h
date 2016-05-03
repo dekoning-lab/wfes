@@ -1,7 +1,9 @@
+#include "dkl.h"
+
 #ifndef DKL_ERROR_H
 #define DKL_ERROR_H
 
-int64_t dkl_errno = 0; 
+DKL_INT dkl_errno;
 
 #define DKL_RUNTIME_ERROR 1
 #define DKL_ARG_PARSE_ERROR 2

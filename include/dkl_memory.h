@@ -3,13 +3,7 @@
 #ifndef DKL_MEMORY_H
 #define DKL_MEMORY_H
 
-void *__dkl_alloc(int64_t n_elements, size_t type_size) {
-	void *obj = calloc(n_elements, type_size);
-	if (!obj) {
-		error_print("Failed to allocate %.3f MB of memory", (double)(n_elements * type_size) / 1024.0);
-	}
-	return obj;
-}
+void *__dkl_alloc(int64_t n_elements, size_t type_size);
 
 #define dkl_alloc(NMEMB, TYPE) __dkl_alloc((NMEMB), sizeof(TYPE))
 #define dkl_new(TYPE) __dkl_alloc(1, sizeof(TYPE))
