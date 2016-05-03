@@ -1,6 +1,6 @@
 #include "dkl.h"
 
-void print_help() {
+void print_help(void) {
   printf("WFES: Wright-Fisher model solver\n"
          "USAGE:\n"
          " -N, --population_size:        Population size\n"

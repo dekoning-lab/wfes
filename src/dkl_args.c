@@ -1,12 +1,12 @@
 #include "dkl_args.h"
 
-void __args_set_field(int argc, char **argv, int64_t n_keywords, char **keywords, bool required, void *field_ptr, char type) {
+void __args_set_field(size_t argc, char **argv, size_t n_keywords, char **keywords, bool required, void *field_ptr, char type) {
     bool found = false;
     dkl_errno = 0;
     char *err = NULL;
     char *keyword_name = keywords[n_keywords - 1];
-    for(int64_t i = 0; i < argc; i ++) {
-        for(int64_t j = 0; j < n_keywords; j ++) {
+    for(size_t i = 0; i < argc; i ++) {
+        for(size_t j = 0; j < n_keywords; j ++) {
             if (streq(argv[i], keywords[j])) {
                 found = true;
                 /* Check boolean */
@@ -53,15 +53,15 @@ void __args_set_field(int argc, char **argv, int64_t n_keywords, char **keywords
     }
 }
 
-bool dkl_args_parse_flag(int argc, char **argv, bool required, ...) {
+bool dkl_args_parse_flag(size_t argc, char **argv, bool required, ...) {
     char **keywords = dkl_alloc(1024, char *);
     char *word;
-    int64_t n_keywords = 0;
+    size_t n_keywords = 0;
     va_list words;
     va_start(words, required);
     word = va_arg(words, char *);
     while (word != NULL) {
-        int64_t word_size = strlen(word) + 1;
+        size_t word_size = strlen(word) + 1;
         keywords[n_keywords] = dkl_alloc(word_size, char);
         strcpy(keywords[n_keywords], word);
         n_keywords++;
@@ -81,15 +81,15 @@ bool dkl_args_parse_flag(int argc, char **argv, bool required, ...) {
     return field;
 }
 
-double dkl_args_parse_double(int argc, char **argv, bool required, ...) {
+double dkl_args_parse_double(size_t argc, char **argv, bool required, ...) {
     char **keywords = dkl_alloc(1024, char *);
     char *word;
-    int64_t n_keywords = 0;
+    size_t n_keywords = 0;
     va_list words;
     va_start(words, required);
     word = va_arg(words, char *);
     while (word != NULL) {
-        int64_t word_size = strlen(word) + 1;
+        size_t word_size = strlen(word) + 1;
         keywords[n_keywords] = dkl_alloc(word_size, char);
         strcpy(keywords[n_keywords], word);
         n_keywords++;
@@ -109,15 +109,15 @@ double dkl_args_parse_double(int argc, char **argv, bool required, ...) {
     return field;
 }
 
-int64_t dkl_args_parse_int(int argc, char **argv, bool required, ...) {
+int64_t dkl_args_parse_int(size_t argc, char **argv, bool required, ...) {
     char **keywords = dkl_alloc(1024, char *);
     char *word;
-    int64_t n_keywords = 0;
+    size_t n_keywords = 0;
     va_list words;
     va_start(words, required);
     word = va_arg(words, char *);
     while (word != NULL) {
-        int64_t word_size = strlen(word) + 1;
+        size_t word_size = strlen(word) + 1;
         keywords[n_keywords] = dkl_alloc(word_size, char);
         strcpy(keywords[n_keywords], word);
         n_keywords++;
@@ -137,15 +137,15 @@ int64_t dkl_args_parse_int(int argc, char **argv, bool required, ...) {
     return field;
 }
 
-char *dkl_args_parse_string(int argc, char **argv, bool required, ...) {
+char *dkl_args_parse_string(size_t argc, char **argv, bool required, ...) {
     char **keywords = dkl_alloc(1024, char *);
     char *word;
-    int64_t n_keywords = 0;
+    size_t n_keywords = 0;
     va_list words;
     va_start(words, required);
     word = va_arg(words, char *);
     while (word != NULL) {
-        int64_t word_size = strlen(word) + 1;
+        size_t word_size = strlen(word) + 1;
         keywords[n_keywords] = dkl_alloc(word_size, char);
         strcpy(keywords[n_keywords], word);
         n_keywords++;

@@ -5,10 +5,12 @@ from glob import glob
 extra_libs = ["-lmkl_intel_ilp64", "-lmkl_core", "-lmkl_intel_thread",
               "-lpthread", "-lmkl_avx", "-lmkl_vml_avx", "-lm", "-liomp5"]
 
+extra_flags = ["-fopenmp"]
+
 extensions = [Extension("wfes",
                         sources=["wfes.pyx"] + glob("src/*.c"),
                         include_dirs=["include/"],
-                        extra_compile_args=["-Wno-unused"],
+                        extra_compile_args=extra_flags,
                         extra_link_args=extra_libs)]
 
 setup(

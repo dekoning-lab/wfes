@@ -25,7 +25,7 @@ void wf_statistics_del(wf_statistics *r) {
   dkl_del(r);
 }
 
-wf_parameters *wf_parameters_new() {
+wf_parameters *wf_parameters_new(void) {
   wf_parameters *wf = dkl_new(wf_parameters);
   return wf;
 }
@@ -221,7 +221,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   // If allele age
   double *_M2 = dkl_alloc(matrix_size, double);
-  double *_M3 = dkl_alloc(matrix_size, double);
+  // double *_M3 = dkl_alloc(matrix_size, double);
 
   DKL_INT block_size;
   if (matrix_size >= 100) {

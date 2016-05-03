@@ -3,8 +3,6 @@
 #ifndef DKL_TIME_H
 #define DKL_TIME_H
 
-static struct timespec t;
-
-double get_current_time();
+double get_current_time(void);
 
 #endif /* DKL_TIME_H */

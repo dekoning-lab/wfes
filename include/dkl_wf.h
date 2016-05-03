@@ -16,7 +16,7 @@ typedef struct wf_parameters_t {
   int    observed_allele_count;	 // (If allele age requested, this is the observed count)
 } wf_parameters;
 
-wf_parameters *wf_parameters_new();
+wf_parameters *wf_parameters_new(void);
 void wf_parameters_del(wf_parameters *wf);
 
 /**

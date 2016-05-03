@@ -7,7 +7,7 @@
             "include/dkl_wf.h"
         ],
         "extra_compile_args": [
-            "-Wno-unused"
+            "-fopenmp"
         ],
         "extra_link_args": [
             "-lmkl_intel_ilp64",

@@ -1,6 +1,8 @@
 #include "dkl_time.h"
 
-double get_current_time() {
+static struct timespec t;
+
+double get_current_time(void) {
 #ifdef __MACH__
   clock_serv_t cclock;
   mach_timespec_t mt;
