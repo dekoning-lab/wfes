@@ -5,8 +5,8 @@ void print_help(void) {
          "USAGE:\n"
          " -n, --population_size:        Population size\n"
          " -s, --selection_coefficient:  Selection coefficient\n"
-         " -u, --forward_mutation_rate:  Mutation rate from a to A\n"
-         " -v, --backward_mutation_rate: Mutation rate from A to a\n"
+         " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
+         " -u, --backward_mutation_rate: Mutation rate from A to a\n"
          " -h, --dominance_coefficient:  Proportion of selection Aa recieves\n"
          "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
          "haploid)\n"
@@ -129,13 +129,6 @@ int main(int argc, char **argv) {
 
   wf_solve(wf, results, zero_threshold);
 
-  double gensubRate =
-      1.0 / ((1.0 / (2 * wf->population_size * wf->forward_mutation_rate) +
-              results->time_extinction) *
-                 (1.0 / results->probability_fixation - 1) +
-             (1.0 / (2 * wf->population_size * wf->forward_mutation_rate)) +
-             results->time_fixation);
-
   // Correct for halpoid size if necessary
   if (wf->selection_mode == 2) {
     wf->population_size *= 2.0;
@@ -146,7 +139,8 @@ int main(int argc, char **argv) {
          wf->selection, wf->forward_mutation_rate, wf->backward_mutation_rate,
          wf->dominance_coefficient, results->probability_extinction,
          results->probability_fixation, results->time_extinction,
-         results->time_fixation, results->count_before_extinction, gensubRate);
+         results->time_fixation, results->count_before_extinction,
+         results->phylogenetic_substitution_rate);
 
   if (wf->observed_allele_count > 0) {
     printf(",%g", results->expectedAge);

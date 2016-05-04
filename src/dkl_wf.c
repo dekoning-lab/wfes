@@ -460,6 +460,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
         }
       }
     }
+
     r->expectedAge = 0;
     for (i = 0; i < matrix_size; i++) {
       r->expectedAge += (_M2[i] * y[i]);
@@ -477,6 +478,22 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   end_time = get_current_time();
   printf("Solution %gs\n", end_time - start_time);
 #endif
+
+  // Memory release
+  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_RELEASE_MEMORY_ALL;
+  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
+             &pardiso_matrix_type, &pardiso_phase, &matrix_size, &double_dummy,
+             A->row_index, A->cols, &integer_dummy,
+             &pardiso_number_right_hand_sides, pardiso_control,
+             &pardiso_message_level, &double_dummy, &double_dummy,
+             &pardiso_error);
+
+  dkl_dealloc(y);
+  dkl_dealloc(workspace);
+
+  dkl_dealloc(A->data);
+  dkl_dealloc(A->cols);
+  dkl_dealloc(A->row_index);
 
   // Calculate the summary statistics
   for (i = 0; i < matrix_size; i++) {
@@ -503,21 +520,13 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     r->probability_fixation = r->fixation_probabilities[0];
   }
 
-  // Memory release
-  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_RELEASE_MEMORY_ALL;
-  pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
-             &pardiso_matrix_type, &pardiso_phase, &matrix_size, &double_dummy,
-             A->row_index, A->cols, &integer_dummy,
-             &pardiso_number_right_hand_sides, pardiso_control,
-             &pardiso_message_level, &double_dummy, &double_dummy,
-             &pardiso_error);
-
-  dkl_dealloc(y);
-  dkl_dealloc(workspace);
-
-  dkl_dealloc(A->data);
-  dkl_dealloc(A->cols);
-  dkl_dealloc(A->row_index);
+  r->phylogenetic_substitution_rate =
+      (1.0 /
+       ((((1.0 / (2.0 * wf->population_size * wf->forward_mutation_rate)) +
+          r->time_extinction) *
+         ((1.0 / r->probability_fixation) - 1.0)) +
+        (1.0 / (2.0 * wf->population_size * wf->forward_mutation_rate)) +
+        r->time_fixation));
 
 #ifdef DEBUG
   printf("Memory used: %.3g GB\n",

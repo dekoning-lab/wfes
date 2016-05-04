@@ -36,6 +36,8 @@ typedef struct wf_statistics_t {
   double *fixation_probabilities;   // Probability of fixation vector
   double *generations;              // Sojourn time vector
 
+  double phylogenetic_substitution_rate; // Rate of substitution over long time
+                                         // periods
   double expectedAge; // Expected allele age (DeSanctis and de Koning, 2016)
   double ageVariance; // Expected allele age-variance (DeSanctis and de Koning,
                       // 2016)
