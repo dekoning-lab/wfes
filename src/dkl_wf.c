@@ -31,14 +31,19 @@ wf_parameters *wf_parameters_new(void) {
 
 void wf_parameters_del(wf_parameters *wf) { dkl_del(wf); }
 
+// Ewens - Mathematical population genetics equation 3.29
 double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
-  double a = (1 + wf->selection) * (i * i);
-  double b = (1 + (wf->selection * wf->dominance_coefficient)) * i *
-             ((2 * wf->population_size) - i);
-  double c = ((2 * wf->population_size) - i) * ((2 * wf->population_size) - i);
+  double N = wf->population_size;
+  double v = wf->forward_mutation_rate;
+  double u = wf->backward_mutation_rate;
+  double s = wf->selection;
+  double h = wf->dominance_coefficient;
+
+  double a = (1 + s) * (i * i);
+  double b = (1 + (s * h)) * i * ((2 * N) - i);
+  double c = ((2 * N) - i) * ((2 * N) - i);
   double q = (a + b) / (a + (2 * b) + c);
-  return ((1 - wf->forward_mutation_rate) * q) +
-         ((1 - q) * wf->backward_mutation_rate);
+  return ((1 - u) * q) + ((1 - q) * v);
 }
 
 double wf_sampling_coefficient_viability(wf_parameters *wf, DKL_INT i) {
@@ -226,7 +231,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   double *workspace = dkl_alloc(matrix_size, double);
 
   // If allele age
-  double *_M2 = dkl_alloc(matrix_size, double);
+  double *M_2 = dkl_alloc(matrix_size, double);
 
   // Block size to calculate at once
   DKL_INT block_size;
@@ -387,10 +392,6 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   if (wf->observed_allele_count > 0) {
 
-    for (i = 0; i < matrix_size; i++) {
-      y[i] = r->generations[i];
-    }
-
     // Solve for M2 (equation 23; WFES)
     pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
     pardiso_64(pardiso_internal, &pardiso_maximum_factors,
@@ -403,76 +404,27 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       exit(pardiso_phase);
     } else {
       // Now store M2 as intermediate result (equation 23; WFES)
-      memcpy(_M2, y, matrix_size * sizeof(double));
+      memcpy(M_2, y, matrix_size * sizeof(double));
     }
-
-    /*
-    // Solve for M3 (equation 26; WFES)
-    pardiso_control[11] = 2;
-    pardiso_64(pardiso_internal, &pardiso_maximum_factors,
-    &pardiso_matrix_number, &pardiso_matrix_type, &pardiso_phase, &matrix_size,
-    A->data,
-               A->row_index, A->cols, &integer_dummy,
-    &pardiso_number_right_hand_sides, pardiso_control, &pardiso_message_level,
-    y,
-               workspace, &pardiso_error);
-    if (pardiso_error != 0) {
-      printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
-      exit(pardiso_phase);
-    } else {
-      // Now store M3 as intermediate result (equation 26; WFES)
-      memcpy(_M3, y, matrix_size * sizeof(double));
-      }
-    }
-    */
 
     // Set x-th column of Q
-    for (i = 0; i < matrix_size; i++) {
-      y[i] = 0;
-    }
-    /*
-      int count=0;
-      int start = A->row_index[wf->observed_allele_count-1];
-      int end = A->row_index[wf->observed_allele_count];
-      printf("Check of first rowindex %d and col %d\n", A->row_index[0],
-      A->cols[0]);
-
-      for (i=start; i<end; i++) {
-            if (count == (wf->observed_allele_count-1) ) {
-                    y[count++] = (A->data[i] * -1) + 1;
-            } else {
-                    y[count++] = (A->data[i] * -1);
-            }
-            printf("Got A[%d][%d] = %f\n", A->cols[i],
-      wf->observed_allele_count-1, y[count-1]);
-      }  */
+    memset(y, 0.0, matrix_size * sizeof(double));
 
     int j;
     for (i = 1; i < A->nrows; i++) {
       for (j = A->row_index[i - 1]; j < A->row_index[i]; j++) {
         if (A->cols[j] == (wf->observed_allele_count - 1)) {
-          if (i == wf->observed_allele_count) {
-            y[i - 1] = (A->data[j] * -1) + 1;
-          } else {
-            y[i - 1] = A->data[j] * -1;
-          }
-          continue;
+          y[i - 1] = (-1 * A->data[j]);
+          y[i - 1] += (i == wf->observed_allele_count) ? 1 : 0;
         }
       }
     }
 
-    r->expectedAge = 0;
+    r->expected_age = 0;
     for (i = 0; i < matrix_size; i++) {
-      r->expectedAge += (_M2[i] * y[i]);
+      r->expected_age += (M_2[i] * y[i]);
     }
-    r->expectedAge /= r->generations[wf->observed_allele_count - 1];
-
-    // printf("Expected age given %d obs is %f\n", wf->observed_allele_count,
-    // r->expectedAge);
-
-    // The variance requires a column of Q(I+Q), which is O((2N-1)^2) to
-    // compute. Let's skip this.
-    // r->ageVariance = xx / r->generations[ wf->observed_allele_count ]; //
+    r->expected_age /= r->generations[wf->observed_allele_count - 1];
   }
 #ifdef DEBUG
   end_time = get_current_time();

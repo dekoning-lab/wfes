@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
          results->phylogenetic_substitution_rate);
 
   if (wf->observed_allele_count > 0) {
-    printf(",%g", results->expectedAge);
+    printf(",%g", results->expected_age);
   }
   printf("\n");
 
