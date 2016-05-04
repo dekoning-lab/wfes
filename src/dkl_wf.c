@@ -8,11 +8,15 @@ wf_statistics *wf_statistics_new(DKL_INT population_size) {
   r->time_extinction = 0;
   r->time_fixation = 0;
   r->count_before_extinction = 0;
+  r->phylogenetic_substitution_rate = 0;
 
   DKL_INT size = (2 * population_size) - 1;
   r->extinction_probabilities = dkl_alloc(size, double);
   r->fixation_probabilities = dkl_alloc(size, double);
   r->generations = dkl_alloc(size, double);
+
+  r->expected_age = 0;
+  // r->age_variance = 0;
 
   return r;
 }
@@ -264,7 +268,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   }
 
   // Setup Pardiso control parameters
-  for (i = 0; i < 64; i++) {
+  for (i = 0; i < MKL_IFS; i++) {
     pardiso_control[i] = MKL_PARDISO_DEFAULT;
     pardiso_internal[i] = MKL_PARDISO_DEFAULT;
   }
@@ -390,7 +394,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
   }
 
-  if (wf->observed_allele_count > 0) {
+  if (wf->observed_allele_count != NAN) {
 
     // Solve for M2 (equation 23; WFES)
     pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
@@ -425,6 +429,8 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       r->expected_age += (M_2[i] * y[i]);
     }
     r->expected_age /= r->generations[wf->observed_allele_count - 1];
+  } else {
+    r->expected_age = NAN;
   }
 #ifdef DEBUG
   end_time = get_current_time();

@@ -29,18 +29,19 @@ typedef struct wf_statistics_t {
   double probability_fixation;   // Probability of absorption through fixation
   double time_extinction; // Expected number of generations until extinction
   double time_fixation;   // Expected number of generations until fixation
-  double count_before_extinction;   // Total expected count of 'A' in all
-                                    // generations before extinction
-  double *extinction_probabilities; // Probability of extinction vector,
-                                    // conditional on the starting state
-  double *fixation_probabilities;   // Probability of fixation vector
-  double *generations;              // Sojourn time vector
+  double count_before_extinction; // Total expected count of 'A' in all
+                                  // generations before extinction
 
   double phylogenetic_substitution_rate; // Rate of substitution over long time
                                          // periods
+  double *extinction_probabilities;      // Probability of extinction vector,
+                                         // conditional on the starting state
+  double *fixation_probabilities;        // Probability of fixation vector
+  double *generations;                   // Sojourn time vector
+
   double expected_age; // Expected allele age (DeSanctis and de Koning, 2016)
-  double age_variance; // Expected allele age-variance (DeSanctis and de Koning,
-                       // 2016)
+  // double age_variance; // Expected allele age-variance (DeSanctis and de
+  // Koning, 2016)
 } wf_statistics;
 
 wf_statistics *wf_statistics_new(DKL_INT population_size);
