@@ -4,36 +4,54 @@ The Wright Fisher Exact Solver, `WFES` ['double-u fez'] is a toolbox for making 
 
 ### Supported exact computations
 
-WFES' exact statistics currently include: 
-* the probabilities of fixation and extinction of an allele; 
-* the mean time to absorption; 
-* the conditional mean time to fixation or extinction; 
-* the mean sojourn times in each frequency class (optional); 
+WFES exact statistics currently include:
+* the probabilities of fixation and extinction of an allele;
+* the mean time to absorption (extinction or fixation);
+* the conditional mean time to fixation or extinction;
+* the mean sojourn times in each frequency class;
 * the mean number of copies of an allele on its way to extinction (the "window of opportunity" for secondary mutations in our stochastic tunnelling codon models; in prep.);
 * the exact expected age of an allele (optional, if an observed frequency is provided, `-x`; DeSanctis and de Koning, 2016);
-* the expected rate of phylogenetic substitution accounting for fast recurrent mutation (in prep.). 
+* the expected rate of phylogenetic substitution accounting for fast recurrent mutation (in prep.).
 
 ### Model variations
 
-Several variations of the general Wright-Fisher model are supported by default that incorporate two-way mutation, selection, and dominance. These include the standard model of fecundity selection (diploid) `-m 0`, an alternative viabiity selection model (diploid) `-m 1`, and a haploid model accounting for mutation and selection `-m 2`.
+Several variations of the general Wright-Fisher model are supported by default that incorporate two-way mutation, selection, and dominance. These include the standard model of fecundity selection (diploid) `-m 0`, an alternative viability selection model (diploid) `-m 1`, and a haploid model accounting for mutation and selection `-m 2`.
 
 *Please cite:* **Kryukov I, DeSanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
 
 ---
 ## Building
+
 The default target is the shared executable and the `python`-compatible shared library
 ```
 git clone https://github.com/dekoning-lab/wfes
 cd wfes
 make
 ```
-Currently, only `linux` systems are supported.
+
+Both `linux` (with `gcc`) and `OSX` (with `clang`) are supported
+
+### Dependencies
+
+Binary:
+* `MKL` libraries
+
+Python:
+* `MKL` libraries
+* `cython`
+* `numpy`
+
+To perform fast numerical analysis, `MKL PARDISO` direct sparse solver is used. The `MKL` libraries are required at compile and run time. These are available directly from [`intel`](https://software.intel.com/en-us/intel-mkl), and through the [`anaconda`](https://www.continuum.io/downloads) `python` distribution. By default, we assume that `anaconda` is installed under `/anaconda/`, and the libraries are compiled against the provided `MKL`.
+
+### Note on OS X
+
+Currently, `clang` does not support `openmp`, so this functionality is restricted to `gcc` at the moment. `OS X` will still use `MKL` threads. 
 
 ## Usage
 
 Short command line options:
 ```lang=bash
-wfes N 1000 s 0.001 u 1e-8 v 1e-8 d 0.5
+wfes -n 1000 -s 0.001 -v 1e-8 -u 1e-8 -h 0.5
 ```
 
 Full command line options:
@@ -41,11 +59,11 @@ Full command line options:
 $ ./wfes --help
 WFES: Wright-Fisher exact solver
 USAGE:
- -N, --population_size:        Population size
+ -n, --population_size:        Population size
  -s, --selection_coefficient:  Selection coefficient
  -u, --forward_mutation_rate:  Mutation rate from a to A (per locus per generation)
  -v, --backward_mutation_rate: Mutation rate from A to a (per locus per generation)
- -d, --dominance_coefficient:  Proportion of selection Aa recieves
+ -h, --dominance_coefficient:  Proportion of selection Aa receives
 [-m, --selection_mode]:        Selection mode (0: fecundity, default; 1: viability; 2: haploid)
 [-x, --observed_allele_count]: Observed count in the population (for allele age)
 [-z, --zero_threshold]:        Any number below this is considered 0. Default 1e-25
@@ -83,13 +101,13 @@ wfes.solve(population_size = 1000,
 |`time_to_extinction`|
 |`time_to_fixation`|
 |`total_count_before_extinction`|
-|`expected_allele_age`|
 |`phylogenetic_substitution_rate`|
+|`expected_allele_age`|
 
 For example:
 ```
-wfes N 1000 s 0.001 u 1e-8 v 1e-8 d 0.5
-1000,0.001,1e-8,1e-8,0.5,0.995,0.005,10.0038,396.511,200
+./wfes -n 1000 -s 0.01 -u 1e-8 -v 1e-8 -h 0.5 -x 10
+1000,0.01,1e-08,1e-08,0.5,0.990068,0.00993225,9.58584,1409.82,212.18,1.98552e-07,56.9915
 ```
 
 The output format is dictated by the convenience of producing tables.
@@ -112,7 +130,7 @@ There are three optional parameters, which denote file names of the output. Note
 
 ##Python interface
 
-There is a convenience wrapper for `python`, which has been tested against version `3.4` and `3.5`. The module assumes that the `libwfes.so` shared library (build by default) is located in the script directory. The module depends on `numpy`.
+There is a convenience wrapper for `python`. The module uses `cython` to build a shared library module, located in the script directory. The module depends on `numpy`.
 
 ## Diploid fitness model
 

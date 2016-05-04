@@ -1,8 +1,7 @@
 #Compilation instructions:
-# By default, `make` will use `gcc` and the bundled libraries
 # If you want to compile against a different copy of the INTEL libraries, adjust MKL_LIB_DIR and INTEL_OMP_DIR
 # For example:
-# 	make cc=ICC MKL_LIB_DIR=/opt/intel/compilers_and_libraries/linux/mkl/intel64 INTEL_OMP_DIR=/opt/intel/compilers_and_libraries/linux/compiler/intel64
+# 	make cc=icc MKL_LIB_DIR=/opt/intel/compilers_and_libraries/linux/mkl/intel64 INTEL_OMP_DIR=/opt/intel/compilers_and_libraries/linux/compiler/intel64
 
 uname:=$(shell uname)
 
@@ -52,14 +51,18 @@ ifeq (${DEBUG},1)
 FLAGS+=-DDEBUG -g -Wall
 endif
 
+C_RED=\033[0;31m
+C_NONE=\033[0m
+
 .PHONY: all clean cython_extension clean_c clean_cython
 
-all: wfes cython_extension
+all: cython_extension wfes
 
 clean: clean_c clean_cython
 
 wfes: ${MODULES} ${HEADERS}
 	${CC} ${MODULES} -o $@ -I${INC_DIR} -L${MKL_LIB_DIR} -Wl,${LINKER_FLAGS} ${FLAGS} ${LIBS}
+	@if [ ${uname} == "Darwin" ]; then echo "${C_RED}[!] please export DYLD_LIBRARY_PATH=${MKL_LIB_DIR}:\$$DYLD_LIBRARY_PATH${C_NONE}"; fi;
 
 cython_extension: wfes.pyx setup.py
 	python setup.py build_ext --inplace
