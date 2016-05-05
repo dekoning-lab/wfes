@@ -52,7 +52,7 @@ cdef extern from "include/dkl_wf.h":
     void wf_solve(wf_parameters *wf, wf_statistics *result, double zero_threshold)
 
 
-def solve(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold=1e-25, observed_allele_count = np.nan):
+def solve(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold=1e-25, observed_allele_count = 0):
     cdef:
         dkl_int matrix_size = (2 * population_size) - 1
         wf_parameters *wf

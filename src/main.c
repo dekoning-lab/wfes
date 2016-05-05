@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
 #ifdef DEBUG
     println("Defaulting to not calculating allele age");
 #endif
-    wf->observed_allele_count = NAN;
+    wf->observed_allele_count = 0;
     dkl_clear_errno();
   }
 

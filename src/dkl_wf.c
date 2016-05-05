@@ -394,7 +394,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
   }
 
-  if (wf->observed_allele_count != NAN) {
+  if (wf->observed_allele_count > 0) {
 
     // Solve for M2 (equation 23; WFES)
     pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
