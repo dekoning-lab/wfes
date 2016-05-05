@@ -11,4 +11,4 @@ for N in population_sizes:
 		for m in mutation_rates:
 			for d in dominance:
 				for t in truncation:
-					print("-N {0} -s {1} -u {2} -v {3} -d {4} -z {5}".format(N,s,m,m,d,t))
+					print("-n {0} -s {1} -v {2} -u {3} -h {4} -z {5}".format(N,s,m,m,d,t))
