@@ -17,6 +17,10 @@ WFES exact statistics currently include:
 
 Several variations of the general Wright-Fisher model are supported by default that incorporate two-way mutation, selection, and dominance. These include the standard model of fecundity selection (diploid) `-m 0`, an alternative viability selection model (diploid) `-m 1`, and a haploid model accounting for mutation and selection `-m 2`.
 
+### Notes
+
+*Note:* **This software is in beta release.** Please report bugs to the authors by [opening an issue](https://github.com/dekoning-lab/wfes/issues/new). Thanks! - [Ivan](mailto:ikryukov@ucalgary.ca) and [Jason](mailto:jason.dekoning@ucalgary.ca).
+
 *Please cite:* **Kryukov I, de Sanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
 
 ---
