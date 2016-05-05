@@ -43,6 +43,7 @@ cdef extern from "include/dkl_wf.h":
     ctypedef wf_parameters_t wf_parameters
     ctypedef wf_statistics_t wf_statistics
 
+
     wf_statistics *wf_statistics_new(dkl_int population_size)
     void wf_statistics_del(wf_statistics *r)
 
@@ -51,6 +52,8 @@ cdef extern from "include/dkl_wf.h":
 
     void wf_solve(wf_parameters *wf, wf_statistics *result, double zero_threshold)
 
+cdef extern from "include/dkl_memory.h":
+    void __dkl_free_v(double *d)
 
 def solve(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold=1e-25, observed_allele_count = 0):
     cdef:
@@ -80,7 +83,11 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
     wf_parameters_del(wf)
 
     #Should this be deferred?
-    wf_statistics_del(results)
+    # wf_statistics_del(results)
+    __dkl_free_v(results.extinction_probabilities)
+    __dkl_free_v(results.fixation_probabilities)
+    __dkl_free_v(results.generations)
+
 
     return WF_Statistics(results.probability_extinction,
                          results.probability_fixation,

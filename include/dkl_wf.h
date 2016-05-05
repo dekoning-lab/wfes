@@ -2,6 +2,7 @@
 
 #ifndef DKL_WF_H
 #define DKL_WF_H
+
 /**
  * wf_parameters - parameters of the Wright-Fisher model
  */

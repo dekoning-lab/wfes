@@ -8,3 +8,5 @@ void *__dkl_alloc(int64_t n_elements, size_t type_size) {
   }
   return obj;
 }
+
+void __dkl_free_v(double *d) { free(d); }

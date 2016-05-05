@@ -11,6 +11,7 @@ void *__dkl_alloc(int64_t n_elements, size_t type_size);
 
 #define dkl_dealloc(PTR) free((PTR))
 #define dkl_del(PTR) free((PTR))
+void __dkl_free_v(double *d);
 #define dkl_realloc(PTR, SIZE, TYPE) realloc((PTR), (SIZE) * sizeof(TYPE))
 
 #define check_mem(A)                                                           \
