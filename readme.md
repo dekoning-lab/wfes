@@ -18,9 +18,9 @@ Several variations of the general Wright-Fisher model are supported by default t
 
 ### Notes
 
-*Note:* **This software is in beta release.** Please report bugs to the authors by [opening an issue](https://github.com/dekoning-lab/wfes/issues/new). Thanks! - [Ivan](mailto:ikryukov@ucalgary.ca) and [Jason](mailto:jason.dekoning@ucalgary.ca).
+**This software is in beta release.** Please report bugs to the authors by [opening an issue](https://github.com/dekoning-lab/wfes/issues/new). Thanks! - [Ivan](mailto:ikryukov@ucalgary.ca) and [Jason](mailto:jason.dekoning@ucalgary.ca).
 
-*Please cite:* **Kryukov I, de Sanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
+*Citation:* **Kryukov I, de Sanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
 
 ---
 ## Building
