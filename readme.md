@@ -10,8 +10,7 @@ WFES exact statistics currently include:
 * the conditional mean time to fixation or extinction;
 * the mean sojourn times in each frequency class;
 * the mean number of copies of an allele on its way to extinction (the "window of opportunity" for secondary mutations in our stochastic tunnelling codon models; in prep.);
-* the exact expected age of an allele (optional, if an observed frequency is provided, `-x`; de Sanctis and de Koning, 2016);
-* the expected rate of phylogenetic substitution accounting for fast recurrent mutation (in prep.).
+* the exact expected age of an allele (optional, if an observed frequency is provided, `-x`; de Sanctis and de Koning, 2016).
 
 ### Model variations
 
