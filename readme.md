@@ -1,6 +1,6 @@
 # The Wright Fisher Exact Solver
 
-The Wright Fisher Exact Solver, `WFES` ['double-u fez'] is a toolbox for making **fast, scalable matrix computations** in population genetics and molecular evolution **without diffusion theory approximations or simulation**. Given parameters for a Wright Fisher model, `WFES` exactly calculates a variety of transient and long-term behaviours using efficient sparse parallel linear algebra techniques. On most computers, `WFES` supports population sizes up to about `Ne=100,000`. Truncation of very small values in the transition matrix can be performed (`-z`) to ameliorate the large space-complexity of such models (see Kryukov, de Sanctis and de Koning, 2016). An experimental "out of core" option is also available to support even larger population sizes, however, this option is unstable in the current release.
+The Wright Fisher Exact Solver, `WFES` ['double-u fez'] is a toolbox for making **fast, scalable matrix computations** in population genetics and molecular evolution **without diffusion theory approximations or simulation**. Given parameters for a Wright Fisher model, `WFES` exactly calculates a variety of transient and long-term behaviours using efficient sparse parallel linear algebra techniques. On most computers, `WFES` supports population sizes up to about `Ne=100,000`. Truncation of very small values in the transition matrix can be performed (`-z`) to ameliorate the large space-complexity of such models (see Kryukov, DeSanctis and de Koning, 2016). An experimental "out of core" option is also available to support even larger population sizes, however, this option is unstable in the current release.
 
 ### Supported exact computations
 
@@ -10,7 +10,7 @@ WFES exact statistics currently include:
 * the conditional mean time to fixation or extinction;
 * the mean sojourn times in each frequency class;
 * the mean number of copies of an allele on its way to extinction (the "window of opportunity" for secondary mutations in our stochastic tunnelling codon models; in prep.);
-* the exact expected age of an allele (optional, if an observed frequency is provided, `-x`; de Sanctis and de Koning, 2016).
+* the exact expected age of an allele (optional, if an observed frequency is provided, `-x`; DeSanctis and de Koning, 2016).
 
 ### Model variations
 
@@ -20,7 +20,7 @@ Several variations of the general Wright-Fisher model are supported by default t
 
 **This software is in beta release.** Please report bugs to the authors by [opening an issue](https://github.com/dekoning-lab/wfes/issues/new). Thanks! - [Ivan](mailto:ikryukov@ucalgary.ca) and [Jason](mailto:jason.dekoning@ucalgary.ca).
 
-*Citation:* **Kryukov I, de Sanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
+*Citation:* **Kryukov I, DeSanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
 
 ---
 ## Building
