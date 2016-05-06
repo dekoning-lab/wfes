@@ -62,7 +62,7 @@ clean: clean_c clean_cython
 
 wfes: ${MODULES} ${HEADERS}
 	${CC} ${MODULES} -o $@ -I${INC_DIR} -L${MKL_LIB_DIR} -Wl,${LINKER_FLAGS} ${FLAGS} ${LIBS}
-	@if [ ${uname} == "Darwin" ]; then echo "${C_RED}[!] please export DYLD_LIBRARY_PATH=${MKL_LIB_DIR}:\$$DYLD_LIBRARY_PATH${C_NONE}"; fi;
+	@ if [ ${uname} = "Darwin" ]; then echo "${C_RED}[!] please export DYLD_LIBRARY_PATH=${MKL_LIB_DIR}:\$$DYLD_LIBRARY_PATH${C_NONE}"; fi;
 
 cython_extension: wfes.pyx setup.py
 	- python setup.py build_ext --inplace
