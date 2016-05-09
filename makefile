@@ -20,8 +20,8 @@ MODULES:=${SRC_DIR}/*.c
 HEADERS:=${INC_DIR}/*.h
 
 # Paths to MKL libraries (shared by default)
-MKL_LIB_DIR:=/anaconda/lib
-INTEL_OMP_DIR:=/anaconda/lib
+MKL_LIB_DIR:=./lib/${uname}
+INTEL_OMP_DIR:=./lib/${uname}
 
 # Default libraries and flags
 FLAGS:=-DMKL_ILP64 -std=c99
