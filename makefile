@@ -56,7 +56,7 @@ C_NONE=\033[0m
 
 .PHONY: all clean cython_extension clean_c clean_cython
 
-all: cython_extension wfes
+all: wfes
 
 clean: clean_c clean_cython
 
