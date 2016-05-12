@@ -16,7 +16,7 @@ wf_statistics *wf_statistics_new(DKL_INT population_size) {
   r->generations = dkl_alloc(size, double);
 
   r->expected_age = 0;
-  // r->age_variance = 0;
+  r->expected_age_stdev = 0;
 
   return r;
 }
@@ -236,6 +236,11 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   // If allele age
   double *M_2 = dkl_alloc(matrix_size, double);
+  
+  // Allele age variance
+  double *M_3 = dkl_alloc(matrix_size, double);
+  double *iqCol = dkl_alloc(matrix_size, double);
+  double *Ax = dkl_alloc(matrix_size, double);
 
   // Block size to calculate at once
   DKL_INT block_size;
@@ -395,7 +400,6 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   }
 
   if (wf->observed_allele_count > 0) {
-
     // Solve for M2 (equation 23; WFES)
     pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
     pardiso_64(pardiso_internal, &pardiso_maximum_factors,
@@ -413,6 +417,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
     // Set x-th column of Q
     memset(y, 0.0, matrix_size * sizeof(double));
+    memset(iqCol, 0.0, matrix_size * sizeof(double));
 
     int j;
     for (i = 1; i < A->nrows; i++) {
@@ -423,15 +428,65 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
         }
       }
     }
-
+   
+    // Copy column x of Q to iqCol 
+    memcpy(iqCol, y, matrix_size * sizeof(double));
+ 
     r->expected_age = 0;
     for (i = 0; i < matrix_size; i++) {
       r->expected_age += (M_2[i] * y[i]);
     }
     r->expected_age /= r->generations[wf->observed_allele_count - 1];
+
+    // Solve for M3 for variance
+    memcpy(y, M_2, matrix_size * sizeof(double));
+    pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
+    pardiso_64(pardiso_internal, &pardiso_maximum_factors,
+               &pardiso_matrix_number, &pardiso_matrix_type, &pardiso_phase,
+               &matrix_size, A->data, A->row_index, A->cols, &integer_dummy,
+               &pardiso_number_right_hand_sides, pardiso_control,
+               &pardiso_message_level, y, workspace, &pardiso_error);
+    if (pardiso_error != 0) {
+      printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
+      exit(pardiso_phase);
+    } else {
+      // Now store M3 as intermediate result (equation 23; WFES)
+      memcpy(M_3, y, matrix_size * sizeof(double));
+    }
+
+    // Calculate Ax = xth column of Q(I+Q)
+    
+    // Set iqCol to be xth column of I+Q
+    iqCol[ wf->observed_allele_count -1  ] += 1.0;
+
+    int k;
+    // Get column Ax
+    for (i = 1; i < A->nrows; i++) {
+	Ax[i-1] = 0.0;
+     	// in row i, iterate over all non-zero entries, k 
+ 	for (k = A->row_index[i - 1]; k < A->row_index[i]; k++) {
+		if ( (i-1) == A->cols[k] ) {
+			// in column A->cols[k]
+			Ax[i-1] += (-1 * A->data[k] + 1.0) * iqCol[ A->cols[k] ];
+		} else {
+			Ax[i-1] += (-1 * A->data[k] ) * iqCol[ A->cols[k] ];
+		}
+	}
+    }
+    
+    double secondMoment = 0;
+    for (i = 0; i < matrix_size; i++) {
+      secondMoment += (M_3[i] * Ax[i]);
+    }
+    secondMoment /= r->generations[wf->observed_allele_count - 1];
+    
+    r->expected_age_stdev = sqrt( secondMoment - pow( r->expected_age, 2.0 ));
+
   } else {
     r->expected_age = NAN;
+    r->expected_age_stdev = NAN;
   }
+
 #ifdef DEBUG
   end_time = get_current_time();
   printf("Solution %gs\n", end_time - start_time);

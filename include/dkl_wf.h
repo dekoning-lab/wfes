@@ -41,8 +41,7 @@ typedef struct wf_statistics_t {
   double *generations;                   // Sojourn time vector
 
   double expected_age; // Expected allele age (DeSanctis and de Koning, 2016)
-  // double age_variance; // Expected allele age-variance (DeSanctis and de
-  // Koning, 2016)
+  double expected_age_stdev; // Expected allele age-variance (DeSanctis and de Koning, 2016)
 } wf_statistics;
 
 wf_statistics *wf_statistics_new(DKL_INT population_size);
