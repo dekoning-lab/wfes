@@ -15,6 +15,7 @@ typedef struct wf_parameters_t {
                                  // over 'aa'
 
   int selection_mode;        // 0: fecundity; 1: viability, 2: haploid fecundity
+  int initial_count;	     // p (defaults to 1)
   int observed_allele_count; // (If allele age requested, this is the observed
                              // count)
 } wf_parameters;

@@ -43,10 +43,12 @@ double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
   double s = wf->selection;
   double h = wf->dominance_coefficient;
 
+
   double a = (1 + s) * (i * i);
   double b = (1 + (s * h)) * i * ((2 * N) - i);
   double c = ((2 * N) - i) * ((2 * N) - i);
   double q = (a + b) / (a + (2 * b) + c);
+
   return ((1 - u) * q) + ((1 - q) * v);
 }
 
@@ -374,12 +376,16 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
   }
 
-  // Solve for the first row of N -> "generations" (equation 19; WFES)
+  // Solve for the p'th row of N -> "generations" (equation 19; WFES)
   // Set y = Ip for p=1 [Note, first index is 1 not 0]
-  y[0] = 1.0;
-  for (i = 1; i < matrix_size; i++) {
+  for (i = 0; i < wf->initial_count; i++) {
     y[i] = 0.0;
   }
+  y[ wf->initial_count-1 ] = 1.0;
+  for (i = wf->initial_count; i < matrix_size; i++) {
+    y[i] = 0.0;
+  }
+
   pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
   pardiso_64(pardiso_internal, &pardiso_maximum_factors, &pardiso_matrix_number,
              &pardiso_matrix_type, &pardiso_phase, &matrix_size, A->data,
@@ -396,7 +402,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       if (r->generations[i] < 0) {
         r->generations[i] = 0;
       }
-    }
+     }
   }
 
   if (wf->observed_allele_count > 0) {
@@ -515,24 +521,25 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     r->count_before_extinction +=
         (r->generations[i] * r->extinction_probabilities[i]) * (i + 1);
   }
-  r->time_extinction /= r->extinction_probabilities[0];
-  r->time_fixation /= r->fixation_probabilities[0];
+  r->time_extinction /= r->extinction_probabilities[ wf->initial_count-1 ];
+  r->time_fixation /= r->fixation_probabilities[ wf->initial_count-1 ];
 
-  r->count_before_extinction /= r->extinction_probabilities[0];
+  r->count_before_extinction /= r->extinction_probabilities[ wf->initial_count-1 ];
 
-  if (r->extinction_probabilities[0] <= 0) {
+  if (r->extinction_probabilities[ wf->initial_count -1 ] <= 0) {
     r->probability_extinction = 0;
     r->time_extinction = NAN;
   } else {
-    r->probability_extinction = r->extinction_probabilities[0];
+    r->probability_extinction = r->extinction_probabilities[ wf->initial_count-1 ];
   }
-  if (r->fixation_probabilities[0] <= 0) {
+  if (r->fixation_probabilities[ wf->initial_count - 1 ] <= 0) {
     r->probability_fixation = 0;
     r->time_fixation = NAN;
   } else {
-    r->probability_fixation = r->fixation_probabilities[0];
+    r->probability_fixation = r->fixation_probabilities[ wf->initial_count-1 ];
   }
 
+  // Note: Gensub formulation assumes the waiting time until a single mutation; p is not used
   r->phylogenetic_substitution_rate =
       (1.0 /
        ((((1.0 / (2.0 * wf->population_size * wf->forward_mutation_rate)) +

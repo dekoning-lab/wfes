@@ -8,6 +8,7 @@ void print_help(void) {
          " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -u, --backward_mutation_rate: Mutation rate from A to a\n"
          " -h, --dominance_coefficient:  Proportion of selection Aa recieves\n"
+         "[-p, --initial_count]:         Assume we start with p copies\n" 
          "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
          "haploid)\n"
          "[-x, --observed_allele_count]: Observed count in the population (for "
@@ -69,6 +70,15 @@ int main(int argc, char **argv) {
     println("Using default selection mode: fecundity");
 #endif
     wf->selection_mode = 0;
+    dkl_clear_errno();
+  }
+  wf->initial_count =
+      dkl_args_parse_int(argc, argv, false, "-p", "--initial_count", NULL);
+  if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+#ifdef DEBUG
+    println("Using default initial frequency: 1");
+#endif
+    wf->initial_count = 1;
     dkl_clear_errno();
   }
 
