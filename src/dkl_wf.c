@@ -539,7 +539,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     r->probability_fixation = r->fixation_probabilities[ wf->initial_count-1 ];
   }
 
-  r->phylogenetic_substitution_rate = 2.0 * wf->population_size * r->probability_fixation;
+  r->phylogenetic_substitution_rate = 2.0 * wf->population_size * wf->forward_mutation_rate * r->probability_fixation;
  
 #ifdef DEBUG
   printf("Memory used: %.3g GB\n",
