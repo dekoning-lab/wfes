@@ -539,15 +539,8 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     r->probability_fixation = r->fixation_probabilities[ wf->initial_count-1 ];
   }
 
-  // Note: Gensub formulation assumes the waiting time until a single mutation; p is not used
-  r->phylogenetic_substitution_rate =
-      (1.0 /
-       ((((1.0 / (2.0 * wf->population_size * wf->forward_mutation_rate)) +
-          r->time_extinction) *
-         ((1.0 / r->probability_fixation) - 1.0)) +
-        (1.0 / (2.0 * wf->population_size * wf->forward_mutation_rate)) +
-        r->time_fixation));
-
+  r->phylogenetic_substitution_rate = 2.0 * wf->population_size * r->probability_fixation;
+ 
 #ifdef DEBUG
   printf("Memory used: %.3g GB\n",
          (double)MKL_Peak_Mem_Usage(MKL_PEAK_MEM) / (GB_CONV));
