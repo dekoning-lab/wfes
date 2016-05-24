@@ -5,10 +5,10 @@ void print_help(void) {
          "USAGE:\n"
          " -n, --population_size:        Population size\n"
          " -s, --selection_coefficient:  Selection coefficient\n"
-         " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -u, --backward_mutation_rate: Mutation rate from A to a\n"
+         " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -h, --dominance_coefficient:  Proportion of selection Aa recieves\n"
-         "[-p, --initial_count]:         Assume we start with p copies\n" 
+         "[-p, --initial_count]:         Assume we start with p copies\n"
          "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
          "haploid)\n"
          "[-x, --observed_allele_count]: Observed count in the population (for "
@@ -46,9 +46,9 @@ int main(int argc, char **argv) {
   wf->selection =
       dkl_args_parse_double(argc, argv, true, "-s", "--selection", NULL);
   wf->forward_mutation_rate =
-      dkl_args_parse_double(argc, argv, true, "-u", "--forward_mutation", NULL);
+      dkl_args_parse_double(argc, argv, true, "-v", "--forward_mutation", NULL);
   wf->backward_mutation_rate = dkl_args_parse_double(
-      argc, argv, true, "-v", "--backward_mutation", NULL);
+      argc, argv, true, "-u", "--backward_mutation", NULL);
   wf->dominance_coefficient =
       dkl_args_parse_double(argc, argv, true, "-h", "--dominance", NULL);
 

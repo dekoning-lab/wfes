@@ -48,7 +48,7 @@ To perform fast numerical analysis, `MKL PARDISO` direct sparse solver is used. 
 
 ### Note on OS X
 
-Currently, `clang` does not support `openmp`, so this functionality is restricted to `gcc` at the moment. `OS X` will still use `MKL` threads. 
+Currently, `clang` does not support `openmp`, so this functionality is restricted to `gcc` at the moment. `OS X` will still use `MKL` threads.
 
 ## Usage
 
@@ -64,8 +64,8 @@ WFES: Wright-Fisher exact solver
 USAGE:
  -n, --population_size:        Population size
  -s, --selection_coefficient:  Selection coefficient
- -u, --forward_mutation_rate:  Mutation rate from a to A (per locus per generation)
- -v, --backward_mutation_rate: Mutation rate from A to a (per locus per generation)
+ -u, --backward_mutation_rate: Mutation rate from A to a (per locus per generation)
+ -v, --forward_mutation_rate:  Mutation rate from a to A (per locus per generation)
  -h, --dominance_coefficient:  Proportion of selection Aa receives
 [-m, --selection_mode]:        Selection mode (0: fecundity, default; 1: viability; 2: haploid)
 [-x, --observed_allele_count]: Observed count in the population (for allele age)
@@ -117,7 +117,7 @@ The output format is dictated by the convenience of producing tables.
 
 ## Batch runs
 
-We include two scripts to perform array jobs with `slurm` job management system. Use `generate_params.py` to generate a file for the input parameters. Then, submit `array_job_wfes.sh`, which will read the parameter file and launch a separate job for each. 
+We include two scripts to perform array jobs with `slurm` job management system. Use `generate_params.py` to generate a file for the input parameters. Then, submit `array_job_wfes.sh`, which will read the parameter file and launch a separate job for each.
 
 ```lang=bash
 python generate_params.py > params.txt

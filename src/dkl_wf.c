@@ -43,7 +43,6 @@ double wf_sampling_coefficient(wf_parameters *wf, DKL_INT i) {
   double s = wf->selection;
   double h = wf->dominance_coefficient;
 
-
   double a = (1 + s) * (i * i);
   double b = (1 + (s * h)) * i * ((2 * N) - i);
   double c = ((2 * N) - i) * ((2 * N) - i);
@@ -217,7 +216,12 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   DKL_INT matrix_size = (2 * wf->population_size) - 1;
 
   // Pardiso control parameters
-  DKL_INT pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_UNSYMMETRIC;
+  DKL_INT pardiso_matrix_type;
+  if (wf->selection == 0) {
+    pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_STRUCT_SYMMETRIC;
+  } else {
+    pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_UNSYMMETRIC;
+  }
   DKL_INT pardiso_number_right_hand_sides = 1;
   void *pardiso_internal[MKL_IFS];
   DKL_INT pardiso_control[MKL_IFS];
@@ -238,7 +242,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   // If allele age
   double *M_2 = dkl_alloc(matrix_size, double);
-  
+
   // Allele age variance
   double *M_3 = dkl_alloc(matrix_size, double);
   double *iqCol = dkl_alloc(matrix_size, double);
@@ -381,7 +385,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   for (i = 0; i < wf->initial_count; i++) {
     y[i] = 0.0;
   }
-  y[ wf->initial_count-1 ] = 1.0;
+  y[wf->initial_count - 1] = 1.0;
   for (i = wf->initial_count; i < matrix_size; i++) {
     y[i] = 0.0;
   }
@@ -402,7 +406,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       if (r->generations[i] < 0) {
         r->generations[i] = 0;
       }
-     }
+    }
   }
 
   if (wf->observed_allele_count > 0) {
@@ -434,10 +438,10 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
         }
       }
     }
-   
-    // Copy column x of Q to iqCol 
+
+    // Copy column x of Q to iqCol
     memcpy(iqCol, y, matrix_size * sizeof(double));
- 
+
     r->expected_age = 0;
     for (i = 0; i < matrix_size; i++) {
       r->expected_age += (M_2[i] * y[i]);
@@ -461,32 +465,32 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     }
 
     // Calculate Ax = xth column of Q(I+Q)
-    
+
     // Set iqCol to be xth column of I+Q
-    iqCol[ wf->observed_allele_count -1  ] += 1.0;
+    iqCol[wf->observed_allele_count - 1] += 1.0;
 
     int k;
     // Get column Ax
     for (i = 1; i < A->nrows; i++) {
-	Ax[i-1] = 0.0;
-     	// in row i, iterate over all non-zero entries, k 
- 	for (k = A->row_index[i - 1]; k < A->row_index[i]; k++) {
-		if ( (i-1) == A->cols[k] ) {
-			// in column A->cols[k]
-			Ax[i-1] += (-1 * A->data[k] + 1.0) * iqCol[ A->cols[k] ];
-		} else {
-			Ax[i-1] += (-1 * A->data[k] ) * iqCol[ A->cols[k] ];
-		}
-	}
+      Ax[i - 1] = 0.0;
+      // in row i, iterate over all non-zero entries, k
+      for (k = A->row_index[i - 1]; k < A->row_index[i]; k++) {
+        if ((i - 1) == A->cols[k]) {
+          // in column A->cols[k]
+          Ax[i - 1] += (-1 * A->data[k] + 1.0) * iqCol[A->cols[k]];
+        } else {
+          Ax[i - 1] += (-1 * A->data[k]) * iqCol[A->cols[k]];
+        }
+      }
     }
-    
+
     double secondMoment = 0;
     for (i = 0; i < matrix_size; i++) {
       secondMoment += (M_3[i] * Ax[i]);
     }
     secondMoment /= r->generations[wf->observed_allele_count - 1];
-    
-    r->expected_age_stdev = sqrt( secondMoment - pow( r->expected_age, 2.0 ));
+
+    r->expected_age_stdev = sqrt(secondMoment - pow(r->expected_age, 2.0));
 
   } else {
     r->expected_age = NAN;
@@ -521,26 +525,30 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     r->count_before_extinction +=
         (r->generations[i] * r->extinction_probabilities[i]) * (i + 1);
   }
-  r->time_extinction /= r->extinction_probabilities[ wf->initial_count-1 ];
-  r->time_fixation /= r->fixation_probabilities[ wf->initial_count-1 ];
+  r->time_extinction /= r->extinction_probabilities[wf->initial_count - 1];
+  r->time_fixation /= r->fixation_probabilities[wf->initial_count - 1];
 
-  r->count_before_extinction /= r->extinction_probabilities[ wf->initial_count-1 ];
+  r->count_before_extinction /=
+      r->extinction_probabilities[wf->initial_count - 1];
 
-  if (r->extinction_probabilities[ wf->initial_count -1 ] <= 0) {
+  if (r->extinction_probabilities[wf->initial_count - 1] <= 0) {
     r->probability_extinction = 0;
     r->time_extinction = NAN;
   } else {
-    r->probability_extinction = r->extinction_probabilities[ wf->initial_count-1 ];
+    r->probability_extinction =
+        r->extinction_probabilities[wf->initial_count - 1];
   }
-  if (r->fixation_probabilities[ wf->initial_count - 1 ] <= 0) {
+  if (r->fixation_probabilities[wf->initial_count - 1] <= 0) {
     r->probability_fixation = 0;
     r->time_fixation = NAN;
   } else {
-    r->probability_fixation = r->fixation_probabilities[ wf->initial_count-1 ];
+    r->probability_fixation = r->fixation_probabilities[wf->initial_count - 1];
   }
 
-  r->phylogenetic_substitution_rate = 2.0 * wf->population_size * wf->forward_mutation_rate * r->probability_fixation;
- 
+  r->phylogenetic_substitution_rate = 2.0 * wf->population_size *
+                                      wf->forward_mutation_rate *
+                                      r->probability_fixation;
+
 #ifdef DEBUG
   printf("Memory used: %.3g GB\n",
          (double)MKL_Peak_Mem_Usage(MKL_PEAK_MEM) / (GB_CONV));
