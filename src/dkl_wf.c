@@ -216,12 +216,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   DKL_INT matrix_size = (2 * wf->population_size) - 1;
 
   // Pardiso control parameters
-  DKL_INT pardiso_matrix_type;
-  if (wf->selection == 0) {
-    pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_STRUCT_SYMMETRIC;
-  } else {
-    pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_UNSYMMETRIC;
-  }
+  DKL_INT pardiso_matrix_type = MKL_PARDISO_MATRIX_TYPE_REAL_UNSYMMETRIC;
   DKL_INT pardiso_number_right_hand_sides = 1;
   void *pardiso_internal[MKL_IFS];
   DKL_INT pardiso_control[MKL_IFS];
