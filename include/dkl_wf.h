@@ -13,6 +13,7 @@ typedef struct wf_parameters_t {
   double backward_mutation_rate; // Mutation rate from 'a' to 'A'
   double dominance_coefficient;  // Proportion of selective advantage of 'Aa'
                                  // over 'aa'
+  double integration_cutoff;	 // When integrating over p, the smallest probability that is considered
 
   int selection_mode;        // 0: fecundity; 1: viability, 2: haploid fecundity
   int initial_count;         // p (defaults to 1)

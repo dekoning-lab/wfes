@@ -9,6 +9,7 @@ void print_help(void) {
          " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
          " -h, --dominance_coefficient:  Proportion of selection Aa recieves\n"
          "[-p, --initial_count]:         Assume we start with p copies\n"
+	       "[-i, --integrate_initial:	     Integrate over p (cutoff: recommended <= 1e-4)\n"
          "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
          "haploid)\n"
          "[-x, --observed_allele_count]: Observed count in the population (for "
@@ -80,6 +81,23 @@ int main(int argc, char **argv) {
 #endif
     wf->initial_count = 1;
     dkl_clear_errno();
+  }
+
+  double integrate_p = -1;
+  integrate_p =
+      dkl_args_parse_double(argc, argv, false, "-i", "--integrate_initial", NULL);
+
+  if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+#ifdef DEBUG
+    println("Using default p (no integration)");
+#endif
+    wf->integration_cutoff = -1;
+    integrate_p = 0;
+    dkl_clear_errno();
+  } else {
+      wf->initial_count = -1;
+      if ( integrate_p >= 0.0 ) wf->integration_cutoff = integrate_p;
+      else wf->integration_cutoff = 1e-4;
   }
 
   wf->observed_allele_count = dkl_args_parse_int(
@@ -158,13 +176,17 @@ int main(int argc, char **argv) {
   printf("\n");
 
   if (generations_file) {
-    FILE *f = fopen(generations_file, "w");
-    if (f != NULL) {
-      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,", results->generations[i]);
+    if ( wf->integration_cutoff >= 0.0 ) {
+      printf("ERROR: User requested generations file, but not available when integrating over p (--integrate_initial).\n");
+    } else {
+      FILE *f = fopen(generations_file, "w");
+      if (f != NULL) {
+        for (DKL_INT i = 0; i < matrix_size - 1; i++) {
+          fprintf(f, "%g,", results->generations[i]);
+        }
+        fprintf(f, "%g\n", results->generations[matrix_size - 1]);
+        fclose(f);
       }
-      fprintf(f, "%g\n", results->generations[matrix_size - 1]);
-      fclose(f);
     }
   }
   if (extinction_file) {

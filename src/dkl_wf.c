@@ -211,6 +211,50 @@ csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size,
   return (Q);
 }
 
+long int factorial(int n) {
+  // recursive factorial for small n
+  if (n == 0)
+    return 1;
+  else
+    return(n * factorial(n-1));
+}
+
+double poisson_prob( int num, double rate ) {
+  return ( pow( rate, num )  * exp(-rate)/factorial(num) );
+}
+
+int return_max_poisson( double rate, double epsilon ) {
+  double current = 0;
+  int index = 0;
+
+  do {
+    current = poisson_prob( index, rate );
+    if ( current >= epsilon ) {
+        index++;
+    }
+  } while ( (current >= epsilon) && ( current <= 1.0 ) );
+
+  index--;
+  return index;
+}
+
+double return_max_poisson_sum( double rate, double epsilon ) {
+  double current = 0;
+  double sum = 0.0;
+  int index = 1;
+
+  do {
+    current = poisson_prob( index, rate );
+    if ( current >= epsilon ) {
+        sum += current;
+        index++;
+    }
+  } while ( current >= epsilon );
+
+  if (sum == 0) sum = 1.0;
+  return sum;
+}
+
 void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   // Declaration
   DKL_INT matrix_size = (2 * wf->population_size) - 1;
@@ -284,8 +328,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       MKL_PARDISO_FILL_IN_REDUCING_ORDERING_NESTED_DISSECTION_OMP;
   pardiso_control[MKL_PARDISO_RETURN_OPTION] = MKL_PARDISO_RETURN_OVERRIDE;
   pardiso_control[MKL_PARDISO_ITERATIVE_REFINEMENT_MAX] = 2;
-  pardiso_control[MKL_PARDISO_PIVOTING_PERTURBATION] =
-      20; // Perturb the pivot elements with 1E-20
+  pardiso_control[MKL_PARDISO_PIVOTING_PERTURBATION] = 20; // Perturb the pivot elements with 1E-20
   pardiso_control[MKL_PARDISO_SCALING_OPTION] = MKL_PARDISO_SCALING_ENABLE;
   pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_DEFAULT;
   pardiso_control[MKL_PARDISO_WEIGHTED_MATCHING_OPTION] =
@@ -347,13 +390,70 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   printf("Numeric factorization %gs\n", end_time - start_time);
 #endif
 
-  // Solution
-  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_SOLVE_ITERATIVE_REFINEMENT;
-
-  pardiso_control[11] = 0;
 #ifdef DEBUG
   start_time = get_current_time();
 #endif
+
+// [ LU decomposition finished ]
+
+// For integrating over p when requested
+int largest_p = return_max_poisson( 2.0 * wf->population_size * wf->forward_mutation_rate, wf->integration_cutoff );
+double z = return_max_poisson_sum( 2.0 * wf->population_size * wf->forward_mutation_rate, wf->integration_cutoff );
+
+// Default is to just calculate for requested p
+int maxValue = wf->initial_count;
+
+// Otherwise use the largest_p that satisfies our criterion
+if (wf->integration_cutoff > 0) {
+  maxValue = largest_p;
+  wf->initial_count = 1;
+}
+
+// Store the initial count since this will be changing inside the loop
+double stored_initial = wf->initial_count;
+
+// Initialize our variables, since we'll be accumulating contributions over values of p
+r->expected_age = 0.0;
+r->expected_age_stdev = 0.0;
+r->time_extinction = 0;
+r->time_fixation = 0;
+r->count_before_extinction = 0;
+r->phylogenetic_substitution_rate = 0;
+
+for (i = 0; i < matrix_size; i++) {
+    r->extinction_probabilities[i] = 0.0;   // Pext
+    r->fixation_probabilities[i] = 0.0;     // Pfix
+    r->generations[i] = 0.0;                // expected number of visits given p - not integrable!
+}
+
+// Temporary storage for current iteration's quantities
+double *fix_probs = dkl_alloc(matrix_size, double);
+double *ext_probs = dkl_alloc(matrix_size, double);
+double exp_age, exp_age_var, phylo;
+
+// Iterate over all starting values
+for (int pp = stored_initial; pp <= maxValue; pp++) {
+  // The probability used is the poisson probability of pp starting copies
+  // normalized by the total probability of between 1 and largest_p copies
+  double prob = poisson_prob( pp, 2.0 * wf->population_size * wf->forward_mutation_rate ) / z;
+  if ( stored_initial == maxValue ) prob = 1.0;
+
+#ifdef DEBUG
+  printf("Solving linear systems assuming p=%d with probability %f...\n", pp, prob );
+#endif
+
+  // Set our use variable
+  wf->initial_count = pp;
+
+  // RHS for solving for column of B
+  for (i = 0; i < matrix_size; i++) {
+    double q = wf_sampling_coefficient(wf, i + 1);
+    y[i] = pow(1 - q, 2 * wf->population_size);
+  }
+
+  // Solution
+  pardiso_phase = MKL_PARDISO_SOLVER_PHASE_SOLVE_ITERATIVE_REFINEMENT;
+  pardiso_control[11] = 0;
 
   // Solve for the second column of B matrix (absorption probs), given y=R_0
   // (equation 20 and 8; WFES)
@@ -362,21 +462,23 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
              A->row_index, A->cols, &integer_dummy,
              &pardiso_number_right_hand_sides, pardiso_control,
              &pardiso_message_level, y, workspace, &pardiso_error);
+
   if (pardiso_error != 0) {
     printf("ERROR during solution: %" PRId64 "\n", pardiso_error);
     exit(pardiso_phase);
   } else {
-    memcpy(r->extinction_probabilities, y, matrix_size * sizeof(double));
+    memcpy(ext_probs, y, matrix_size * sizeof(double));
     for (i = 0; i < matrix_size; i++) {
-      if (r->extinction_probabilities[i] < 0) {
-        r->extinction_probabilities[i] = 0.0;
+      if (ext_probs[i] < 0) {
+        ext_probs[i] = 0.0;
       }
-      r->fixation_probabilities[i] = 1.0 - r->extinction_probabilities[i];
+      fix_probs[i] = 1.0 - ext_probs[i];
     }
   }
 
   // Solve for the p'th row of N -> "generations" (equation 19; WFES)
-  // Set y = Ip for p=1 [Note, first index is 1 not 0]
+
+  // Set y = Ip for p=initial_count [Note, first index is 1 not 0]
   for (i = 0; i < wf->initial_count; i++) {
     y[i] = 0.0;
   }
@@ -437,11 +539,11 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
     // Copy column x of Q to iqCol
     memcpy(iqCol, y, matrix_size * sizeof(double));
 
-    r->expected_age = 0;
+    exp_age = 0;
     for (i = 0; i < matrix_size; i++) {
-      r->expected_age += (M_2[i] * y[i]);
+      exp_age += (M_2[i] * y[i]);
     }
-    r->expected_age /= r->generations[wf->observed_allele_count - 1];
+    exp_age /= r->generations[wf->observed_allele_count - 1];
 
     // Solve for M3 for variance
     memcpy(y, M_2, matrix_size * sizeof(double));
@@ -479,18 +581,70 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
       }
     }
 
+    exp_age_var = 0.0;
     double secondMoment = 0;
     for (i = 0; i < matrix_size; i++) {
       secondMoment += (M_3[i] * Ax[i]);
     }
     secondMoment /= r->generations[wf->observed_allele_count - 1];
 
-    r->expected_age_stdev = sqrt(secondMoment - pow(r->expected_age, 2.0));
+    exp_age_var = sqrt(secondMoment - pow(r->expected_age, 2.0));
 
   } else {
-    r->expected_age = NAN;
-    r->expected_age_stdev = NAN;
+    exp_age = NAN;
+    exp_age_var = NAN;
   }
+
+  double t_ext, t_fix, count;
+  t_ext = t_fix = count = 0.0;
+
+  // Calculate the summary statistics
+  for (i = 0; i < matrix_size; i++) {
+    t_ext += (ext_probs[i] * r->generations[i]);
+    t_fix += (fix_probs[i] * r->generations[i]);
+    count +=
+        (r->generations[i] * ext_probs[i]) * (i + 1);
+  }
+  t_ext /= ext_probs[wf->initial_count - 1];
+  t_fix /= fix_probs[wf->initial_count - 1];
+
+  count /=
+      ext_probs[wf->initial_count - 1];
+
+  double Pfix, Pext;
+  Pfix = Pext = 0;
+
+  if (ext_probs[wf->initial_count - 1] <= 0) {
+    Pext = 0;
+    t_ext = NAN;
+  } else {
+    Pext =
+        ext_probs[wf->initial_count - 1];
+  }
+  if (fix_probs[wf->initial_count - 1] <= 0) {
+    Pfix = 0;
+    t_fix = NAN;
+  } else {
+    Pfix = fix_probs[wf->initial_count - 1];
+  }
+  // Kimura's substitution rate given exact Pfix
+  phylo = 2.0 * wf->population_size * wf->forward_mutation_rate * Pfix;
+
+  // Accumulate integrals
+  r->probability_fixation += (prob * Pfix);
+  r->probability_extinction += (prob * Pext);
+  r->time_fixation   += (prob * t_fix);
+  r->time_extinction += (prob * t_ext);
+  r->count_before_extinction += (prob * count);
+  r->phylogenetic_substitution_rate += (prob * phylo);
+  r->expected_age_stdev += (prob * exp_age_var);
+  r->expected_age += (prob * exp_age);
+
+  // Diagnostic output
+  // printf("Expected age for %d is %f (prob %f)\n", pp, exp_age, prob);
+}
+
+wf->initial_count = stored_initial;
 
 #ifdef DEBUG
   end_time = get_current_time();
@@ -506,43 +660,15 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
              &pardiso_message_level, &double_dummy, &double_dummy,
              &pardiso_error);
 
+  dkl_dealloc( fix_probs );
+  dkl_dealloc( ext_probs );
+
   dkl_dealloc(y);
   dkl_dealloc(workspace);
 
   dkl_dealloc(A->data);
   dkl_dealloc(A->cols);
   dkl_dealloc(A->row_index);
-
-  // Calculate the summary statistics
-  for (i = 0; i < matrix_size; i++) {
-    r->time_extinction += (r->extinction_probabilities[i] * r->generations[i]);
-    r->time_fixation += (r->fixation_probabilities[i] * r->generations[i]);
-    r->count_before_extinction +=
-        (r->generations[i] * r->extinction_probabilities[i]) * (i + 1);
-  }
-  r->time_extinction /= r->extinction_probabilities[wf->initial_count - 1];
-  r->time_fixation /= r->fixation_probabilities[wf->initial_count - 1];
-
-  r->count_before_extinction /=
-      r->extinction_probabilities[wf->initial_count - 1];
-
-  if (r->extinction_probabilities[wf->initial_count - 1] <= 0) {
-    r->probability_extinction = 0;
-    r->time_extinction = NAN;
-  } else {
-    r->probability_extinction =
-        r->extinction_probabilities[wf->initial_count - 1];
-  }
-  if (r->fixation_probabilities[wf->initial_count - 1] <= 0) {
-    r->probability_fixation = 0;
-    r->time_fixation = NAN;
-  } else {
-    r->probability_fixation = r->fixation_probabilities[wf->initial_count - 1];
-  }
-
-  r->phylogenetic_substitution_rate = 2.0 * wf->population_size *
-                                      wf->forward_mutation_rate *
-                                      r->probability_fixation;
 
 #ifdef DEBUG
   printf("Memory used: %.3g GB\n",
