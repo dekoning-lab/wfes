@@ -75,7 +75,7 @@ params.txt: generate_params.py
 	python $< > $@
 
 clean_c:
-	${RM} wfes *.so __pycache__
+	${RM} wfes *.so __pycache__ wfes.dSYM
 
 clean_cython:
 	${RM} wfes.c build/ *.so
