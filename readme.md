@@ -121,6 +121,7 @@ We include two scripts to perform array jobs with `slurm` job management system.
 
 ```lang=bash
 python generate_params.py > params.txt
+```
 
 
 ###Sparsity
