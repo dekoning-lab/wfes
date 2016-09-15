@@ -23,6 +23,10 @@ HEADERS:=${INC_DIR}/*.h
 MKL_LIB_DIR:=./lib/${uname}
 INTEL_OMP_DIR:=./lib/${uname}
 
+# Path to anaconda MKL libraries (uncomment for building the python extension)
+# MKL_LIB_DIR:=${HOME}/anaconda3/lib
+# INTEL_OMP_DIR:=${HOME}/anaconda3/lib
+
 # Default libraries and flags
 FLAGS:=-DMKL_ILP64 -std=c99
 RPATH:=-rpath,${MKL_LIB_DIR},-rpath,${INTEL_OMP_DIR}

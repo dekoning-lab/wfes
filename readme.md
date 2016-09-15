@@ -25,12 +25,23 @@ Several variations of the general Wright-Fisher model are supported by default t
 ---
 ## Building
 
-The default target is the shared executable and the `python`-compatible shared library
+The default target is the shared executable:
+
 ```
 git clone https://github.com/dekoning-lab/wfes
 cd wfes
 make
 ```
+
+To build the `python` library, compile `cython-extension` target:
+
+```
+make cython-extension
+# check:
+python -m "wfes"
+```
+Note that for the `cython` extension, you would want to compile against `anaconda` `MKL`.
+See the `makefile` for extra details.
 
 Both `linux` (with `gcc`) and `OSX` (with `clang`) are supported
 
