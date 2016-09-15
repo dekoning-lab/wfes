@@ -621,11 +621,19 @@ for (int pp = stored_initial; pp <= maxValue; pp++) {
     Pext =
         ext_probs[wf->initial_count - 1];
   }
+  // This could happen if p_ext is very close to zero
+  if (t_ext <= 0) {
+    t_ext = NAN;
+  }
   if (fix_probs[wf->initial_count - 1] <= 0) {
     Pfix = 0;
     t_fix = NAN;
   } else {
     Pfix = fix_probs[wf->initial_count - 1];
+  }
+  // This could happen if p_fix is very close to zero
+  if (t_fix <= 0) {
+    t_fix = NAN;
   }
   // Kimura's substitution rate given exact Pfix
   phylo = 2.0 * wf->population_size * wf->forward_mutation_rate * Pfix;
