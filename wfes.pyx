@@ -13,7 +13,8 @@ WF_Statistics = namedtuple("WF_Statistics", ["probability_extinction",
                                              "extinction_probabilities",
                                              "fixation_probabilities",
                                              "generations",
-                                             "expected_age"])
+                                             "expected_age",
+                                             "expected_age_stdev"])
 
 # Define C interface
 cdef extern from "include/dkl_wf.h":
@@ -23,7 +24,9 @@ cdef extern from "include/dkl_wf.h":
         double forward_mutation_rate
         double backward_mutation_rate
         double dominance_coefficient
+        double integration_cutoff
         int selection_mode
+        int initial_count
         int observed_allele_count
 
     struct wf_statistics_t:
@@ -39,6 +42,7 @@ cdef extern from "include/dkl_wf.h":
         double *generations
 
         double expected_age
+        double expected_age_stdev
 
     ctypedef wf_parameters_t wf_parameters
     ctypedef wf_statistics_t wf_statistics
@@ -55,7 +59,7 @@ cdef extern from "include/dkl_wf.h":
 cdef extern from "include/dkl_memory.h":
     void __dkl_free_v(double *d)
 
-def solve(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold=1e-25, observed_allele_count = 0):
+def solve(population_size, selection_coefficient, forward_mutation_rate, backward_mutation_rate, dominance_coefficient, zero_threshold=1e-25, observed_allele_count = 0, integration_cutoff = -1, selection_mode = 0, initial_count = 1):
     cdef:
         dkl_int matrix_size = (2 * population_size) - 1
         wf_parameters *wf
@@ -73,6 +77,10 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
     wf.backward_mutation_rate = backward_mutation_rate
     wf.dominance_coefficient = dominance_coefficient
     wf.observed_allele_count = observed_allele_count
+
+    wf.initial_count = initial_count
+    wf.selection_mode = selection_mode
+    wf.integration_cutoff = integration_cutoff
 
     wf_solve(wf, results, zero_threshold)
 
@@ -98,4 +106,5 @@ def solve(population_size, selection_coefficient, forward_mutation_rate, backwar
                          np.asarray(extinction_probabilities),
                          np.asarray(fixation_probabilities),
                          np.asarray(generations),
-                         results.expected_age)
+                         results.expected_age,
+                         results.expected_age_stdev)
