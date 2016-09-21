@@ -148,6 +148,8 @@ There are three optional parameters, which denote file names of the output. Note
 - `--generations_file/--sojourn_time_file`: output the expected number of generations the population spends with a given number of copies to file.
 - `--extinction_file`: output the probability of extinction, conditioned on starting with a given number of copies.
 - `--fixation_file`: output the probability of fixation, conditioned on starting with a given number of copies.
+- `--extinction_sojourn_time`: output the number of generations spent in each model state, conditional on extinction
+- `--fixation_sojourn_time`: output the number of generations spent in each model state, conditional on eventual fixation
 
 ##Python interface
 
