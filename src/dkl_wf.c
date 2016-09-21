@@ -15,6 +15,9 @@ wf_statistics *wf_statistics_new(DKL_INT population_size) {
   r->fixation_probabilities = dkl_alloc(size, double);
   r->generations = dkl_alloc(size, double);
 
+  r->sojourn_conditional_extinction = dkl_alloc(size, double);
+  r->sojourn_conditional_fixation = dkl_alloc(size, double);
+
   r->expected_age = 0;
   r->expected_age_stdev = 0;
 
@@ -25,6 +28,8 @@ void wf_statistics_del(wf_statistics *r) {
   dkl_del(r->extinction_probabilities);
   dkl_del(r->fixation_probabilities);
   dkl_del(r->generations);
+  dkl_del(r->sojourn_conditional_extinction);
+  dkl_del(r->sojourn_conditional_fixation);
   dkl_del(r);
 }
 
@@ -284,7 +289,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
 
   // Allele age variance
   double *M_3 = dkl_alloc(matrix_size, double);
-  double *iqCol = dkl_alloc(matrix_size, double);
+  double *IQ_col = dkl_alloc(matrix_size, double);
   double *Ax = dkl_alloc(matrix_size, double);
 
   // Block size to calculate at once
@@ -401,11 +406,11 @@ int largest_p = return_max_poisson( 2.0 * wf->population_size * wf->forward_muta
 double z = return_max_poisson_sum( 2.0 * wf->population_size * wf->forward_mutation_rate, wf->integration_cutoff );
 
 // Default is to just calculate for requested p
-int maxValue = wf->initial_count;
+int max_value = wf->initial_count;
 
 // Otherwise use the largest_p that satisfies our criterion
 if (wf->integration_cutoff > 0) {
-  maxValue = largest_p;
+  max_value = largest_p;
   wf->initial_count = 1;
 }
 
@@ -424,6 +429,8 @@ for (i = 0; i < matrix_size; i++) {
     r->extinction_probabilities[i] = 0.0;   // Pext
     r->fixation_probabilities[i] = 0.0;     // Pfix
     r->generations[i] = 0.0;                // expected number of visits given p - not integrable!
+    r->sojourn_conditional_extinction[i] = 0.0;
+    r->sojourn_conditional_fixation[i] = 0.0;
 }
 
 // Temporary storage for current iteration's quantities
@@ -432,11 +439,11 @@ double *ext_probs = dkl_alloc(matrix_size, double);
 double exp_age, exp_age_var, phylo;
 
 // Iterate over all starting values
-for (int pp = stored_initial; pp <= maxValue; pp++) {
+for (int pp = stored_initial; pp <= max_value; pp++) {
   // The probability used is the poisson probability of pp starting copies
   // normalized by the total probability of between 1 and largest_p copies
   double prob = poisson_prob( pp, 2.0 * wf->population_size * wf->forward_mutation_rate ) / z;
-  if ( stored_initial == maxValue ) prob = 1.0;
+  if ( stored_initial == max_value ) prob = 1.0;
 
 #ifdef DEBUG
   printf("Solving linear systems assuming p=%d with probability %f...\n", pp, prob );
@@ -524,7 +531,7 @@ for (int pp = stored_initial; pp <= maxValue; pp++) {
 
     // Set x-th column of Q
     memset(y, 0.0, matrix_size * sizeof(double));
-    memset(iqCol, 0.0, matrix_size * sizeof(double));
+    memset(IQ_col, 0.0, matrix_size * sizeof(double));
 
     int j;
     for (i = 1; i < A->nrows; i++) {
@@ -536,8 +543,8 @@ for (int pp = stored_initial; pp <= maxValue; pp++) {
       }
     }
 
-    // Copy column x of Q to iqCol
-    memcpy(iqCol, y, matrix_size * sizeof(double));
+    // Copy column x of Q to IQ_col
+    memcpy(IQ_col, y, matrix_size * sizeof(double));
 
     exp_age = 0;
     for (i = 0; i < matrix_size; i++) {
@@ -563,8 +570,8 @@ for (int pp = stored_initial; pp <= maxValue; pp++) {
 
     // Calculate Ax = xth column of Q(I+Q)
 
-    // Set iqCol to be xth column of I+Q
-    iqCol[wf->observed_allele_count - 1] += 1.0;
+    // Set IQ_col to be xth column of I+Q
+    IQ_col[wf->observed_allele_count - 1] += 1.0;
 
     int k;
     // Get column Ax
@@ -574,21 +581,21 @@ for (int pp = stored_initial; pp <= maxValue; pp++) {
       for (k = A->row_index[i - 1]; k < A->row_index[i]; k++) {
         if ((i - 1) == A->cols[k]) {
           // in column A->cols[k]
-          Ax[i - 1] += (-1 * A->data[k] + 1.0) * iqCol[A->cols[k]];
+          Ax[i - 1] += (-1 * A->data[k] + 1.0) * IQ_col[A->cols[k]];
         } else {
-          Ax[i - 1] += (-1 * A->data[k]) * iqCol[A->cols[k]];
+          Ax[i - 1] += (-1 * A->data[k]) * IQ_col[A->cols[k]];
         }
       }
     }
 
     exp_age_var = 0.0;
-    double secondMoment = 0;
+    double second_moment = 0;
     for (i = 0; i < matrix_size; i++) {
-      secondMoment += (M_3[i] * Ax[i]);
+      second_moment += (M_3[i] * Ax[i]);
     }
-    secondMoment /= r->generations[wf->observed_allele_count - 1];
+    second_moment /= r->generations[wf->observed_allele_count - 1];
 
-    exp_age_var = sqrt(secondMoment - pow(r->expected_age, 2.0));
+    exp_age_var = sqrt(second_moment - pow(r->expected_age, 2.0));
 
   } else {
     exp_age = NAN;
@@ -604,6 +611,8 @@ for (int pp = stored_initial; pp <= maxValue; pp++) {
     t_fix += (fix_probs[i] * r->generations[i]);
     count +=
         (r->generations[i] * ext_probs[i]) * (i + 1);
+    r->sojourn_conditional_extinction[i] = ext_probs[i] / ext_probs[0] * r->generations[i];
+    r->sojourn_conditional_fixation[i] = fix_probs[i] / fix_probs[matrix_size - 1] * r->generations[i];
   }
   t_ext /= ext_probs[wf->initial_count - 1];
   t_fix /= fix_probs[wf->initial_count - 1];

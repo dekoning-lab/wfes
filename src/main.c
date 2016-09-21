@@ -3,28 +3,23 @@
 void print_help(void) {
   printf("WFES: Wright-Fisher model solver\n"
          "USAGE:\n"
-         " -n, --population_size:        Population size\n"
-         " -s, --selection_coefficient:  Selection coefficient\n"
-         " -u, --backward_mutation_rate: Mutation rate from A to a\n"
-         " -v, --forward_mutation_rate:  Mutation rate from a to A\n"
-         " -h, --dominance_coefficient:  Proportion of selection Aa recieves\n"
-         "[-p, --initial_count]:         Assume we start with p copies\n"
-	       "[-i, --integrate_initial:	     Integrate over p (cutoff: recommended <= 1e-4)\n"
-         "[-m, --selection_mode]:        Selection mode (1: viability; 2: "
-         "haploid)\n"
-         "[-x, --observed_allele_count]: Observed count in the population (for "
-         "allele age)\n"
-         "[-z, --zero_threshold]:        Any number below this is considered "
-         "0. Default 1e-25\n"
-         "[-g, --generations_file]:      Generations spent with a given number "
-         "of copies\n"
-         "[-e, --extinction_file]:       Probability of extinction, given the "
-         "starting number of copies\n"
-         "[-f, --fixation_file]:         Probability of fixation, given the "
-         "starting number of copies\n"
-         "[--force]:                     Do not preform any parameter validity "
-         "checks\n"
-         "[--help]:                      Print this message and exit\n");
+         " -n, --population_size:                   Population size\n"
+         " -s, --selection_coefficient:             Selection coefficient\n"
+         " -u, --backward_mutation_rate:            Mutation rate from A to a\n"
+         " -v, --forward_mutation_rate:             Mutation rate from a to A\n"
+         " -h, --dominance_coefficient:             Proportion of selection Aa recieves\n"
+         "[-p, --initial_count]:                    Assume we start with p copies\n"
+	       "[-i, --integrate_initial:	                Integrate over p (cutoff: recommended <= 1e-4)\n"
+         "[-m, --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
+         "[-x, --observed_allele_count]:            Observed count in the population (for allele age)\n"
+         "[-z, --zero_threshold]:                   Any number below this is considered 0. Default 1e-25\n"
+         "[-g, --generations_file]:                 Generations spent with a given number of copies\n"
+         "[-e, --extinction_file]:                  Probability of extinction, given the starting number of copies\n"
+         "[-f, --fixation_file]:                    Probability of fixation, given the starting number of copies\n"
+         "[-es, --extinction_sojourn_file]:         Expected number of generations spent in each state, conditional on eventual extinction\n"
+         "[-fs, --fixation_sojourn_file]:           Expected number of generations spent in each state, conditional on eventual fixation\n"
+         "[--force]:                                Do not preform any parameter validity checks\n"
+         "[--help]:                                 Print this message and exit\n");
 }
 
 /**
@@ -127,6 +122,11 @@ int main(int argc, char **argv) {
   char *fixation_file =
       dkl_args_parse_string(argc, argv, false, "-f", "--fixation_file", NULL);
 
+  char *extinction_sojourn_file =
+      dkl_args_parse_string(argc, argv, false, "-fs", "--extinction_sojourn_file", NULL);
+  char *fixation_sojourn_file =
+      dkl_args_parse_string(argc, argv, false, "-es", "--fixation_sojourn_file", NULL);
+
   bool force = dkl_args_parse_flag(argc, argv, false, "--force", NULL);
   if (!force) {
     if (wf->population_size > 500000) {
@@ -206,6 +206,26 @@ int main(int argc, char **argv) {
         fprintf(f, "%g,", results->fixation_probabilities[i]);
       }
       fprintf(f, "%g\n", results->fixation_probabilities[matrix_size - 1]);
+      fclose(f);
+    }
+  }
+  if (extinction_sojourn_file) {
+    FILE *f = fopen(extinction_sojourn_file, "w");
+    if (f != NULL) {
+      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
+        fprintf(f, "%g,\n", results->sojourn_conditional_extinction[i]);
+      }
+      fprintf(f, "%g\n", results->sojourn_conditional_extinction[matrix_size - 1]);
+      fclose(f);
+    }
+  }
+  if (fixation_sojourn_file) {
+    FILE *f = fopen(fixation_sojourn_file, "w");
+    if (f != NULL) {
+      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
+        fprintf(f, "%g,\n", results->sojourn_conditional_fixation[i]);
+      }
+      fprintf(f, "%g\n", results->sojourn_conditional_fixation[matrix_size - 1]);
       fclose(f);
     }
   }

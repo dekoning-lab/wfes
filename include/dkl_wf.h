@@ -41,6 +41,8 @@ typedef struct wf_statistics_t {
                                          // conditional on the starting state
   double *fixation_probabilities;        // Probability of fixation vector
   double *generations;                   // Sojourn time vector
+  double *sojourn_conditional_extinction;
+  double *sojourn_conditional_fixation;
 
   double expected_age; // Expected allele age (DeSanctis and de Koning, 2016)
   double expected_age_stdev; // Expected allele age-variance (DeSanctis and de
