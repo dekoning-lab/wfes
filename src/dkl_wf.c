@@ -611,8 +611,8 @@ for (int pp = stored_initial; pp <= max_value; pp++) {
     t_fix += (fix_probs[i] * r->generations[i]);
     count +=
         (r->generations[i] * ext_probs[i]) * (i + 1);
-    r->sojourn_conditional_extinction[i] = ext_probs[i] / ext_probs[0] * r->generations[i];
-    r->sojourn_conditional_fixation[i] = fix_probs[i] / fix_probs[matrix_size - 1] * r->generations[i];
+    r->sojourn_conditional_extinction[i] = ext_probs[i] / ext_probs[wf->initial_count - 1] * r->generations[i];
+    r->sojourn_conditional_fixation[i] = fix_probs[i] / fix_probs[wf->initial_count - 1] * r->generations[i];
   }
   t_ext /= ext_probs[wf->initial_count - 1];
   t_fix /= fix_probs[wf->initial_count - 1];

@@ -123,9 +123,9 @@ int main(int argc, char **argv) {
       dkl_args_parse_string(argc, argv, false, "-f", "--fixation_file", NULL);
 
   char *extinction_sojourn_file =
-      dkl_args_parse_string(argc, argv, false, "-fs", "--extinction_sojourn_file", NULL);
+      dkl_args_parse_string(argc, argv, false, "-es", "--extinction_sojourn_file", NULL);
   char *fixation_sojourn_file =
-      dkl_args_parse_string(argc, argv, false, "-es", "--fixation_sojourn_file", NULL);
+      dkl_args_parse_string(argc, argv, false, "-fs", "--fixation_sojourn_file", NULL);
 
   bool force = dkl_args_parse_flag(argc, argv, false, "--force", NULL);
   if (!force) {
@@ -181,10 +181,9 @@ int main(int argc, char **argv) {
     } else {
       FILE *f = fopen(generations_file, "w");
       if (f != NULL) {
-        for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-          fprintf(f, "%g,", results->generations[i]);
+        for (DKL_INT i = 0; i < matrix_size; i++) {
+          fprintf(f, "%g\n", results->generations[i]);
         }
-        fprintf(f, "%g\n", results->generations[matrix_size - 1]);
         fclose(f);
       }
     }
@@ -192,40 +191,36 @@ int main(int argc, char **argv) {
   if (extinction_file) {
     FILE *f = fopen(extinction_file, "w");
     if (f != NULL) {
-      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,", results->extinction_probabilities[i]);
+      for (DKL_INT i = 0; i < matrix_size; i++) {
+        fprintf(f, "%g\n", results->extinction_probabilities[i]);
       }
-      fprintf(f, "%g\n", results->extinction_probabilities[matrix_size - 1]);
       fclose(f);
     }
   }
   if (fixation_file) {
     FILE *f = fopen(fixation_file, "w");
     if (f != NULL) {
-      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,", results->fixation_probabilities[i]);
+      for (DKL_INT i = 0; i < matrix_size; i++) {
+        fprintf(f, "%g\n", results->fixation_probabilities[i]);
       }
-      fprintf(f, "%g\n", results->fixation_probabilities[matrix_size - 1]);
       fclose(f);
     }
   }
   if (extinction_sojourn_file) {
     FILE *f = fopen(extinction_sojourn_file, "w");
     if (f != NULL) {
-      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,", results->sojourn_conditional_extinction[i]);
+      for (DKL_INT i = 0; i < matrix_size; i++) {
+        fprintf(f, "%g\n", results->sojourn_conditional_extinction[i]);
       }
-      fprintf(f, "%g\n", results->sojourn_conditional_extinction[matrix_size - 1]);
       fclose(f);
     }
   }
   if (fixation_sojourn_file) {
     FILE *f = fopen(fixation_sojourn_file, "w");
     if (f != NULL) {
-      for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,", results->sojourn_conditional_fixation[i]);
+      for (DKL_INT i = 0; i < matrix_size; i++) {
+        fprintf(f, "%g\n", results->sojourn_conditional_fixation[i]);
       }
-      fprintf(f, "%g\n", results->sojourn_conditional_fixation[matrix_size - 1]);
       fclose(f);
     }
   }
