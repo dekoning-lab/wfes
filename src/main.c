@@ -213,7 +213,7 @@ int main(int argc, char **argv) {
     FILE *f = fopen(extinction_sojourn_file, "w");
     if (f != NULL) {
       for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,\n", results->sojourn_conditional_extinction[i]);
+        fprintf(f, "%g,", results->sojourn_conditional_extinction[i]);
       }
       fprintf(f, "%g\n", results->sojourn_conditional_extinction[matrix_size - 1]);
       fclose(f);
@@ -223,7 +223,7 @@ int main(int argc, char **argv) {
     FILE *f = fopen(fixation_sojourn_file, "w");
     if (f != NULL) {
       for (DKL_INT i = 0; i < matrix_size - 1; i++) {
-        fprintf(f, "%g,\n", results->sojourn_conditional_fixation[i]);
+        fprintf(f, "%g,", results->sojourn_conditional_fixation[i]);
       }
       fprintf(f, "%g\n", results->sojourn_conditional_fixation[matrix_size - 1]);
       fclose(f);
