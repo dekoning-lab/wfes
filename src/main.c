@@ -9,7 +9,7 @@ void print_help(void) {
          " -v, --forward_mutation_rate:             Mutation rate from a to A\n"
          " -h, --dominance_coefficient:             Proportion of selection Aa recieves\n"
          "[-p, --initial_count]:                    Assume we start with p copies\n"
-	       "[-i, --integrate_initial:	                Integrate over p (cutoff: recommended <= 1e-4)\n"
+	       "[-i, --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
          "[-m, --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
          "[-x, --observed_allele_count]:            Observed count in the population (for allele age)\n"
          "[-z, --zero_threshold]:                   Any number below this is considered 0. Default 1e-25\n"
@@ -19,7 +19,9 @@ void print_help(void) {
          "[-es, --extinction_sojourn_file]:         Expected number of generations spent in each state, conditional on eventual extinction\n"
          "[-fs, --fixation_sojourn_file]:           Expected number of generations spent in each state, conditional on eventual fixation\n"
          "[--force]:                                Do not preform any parameter validity checks\n"
-         "[--help]:                                 Print this message and exit\n");
+         "[--help]:                                 Print this message and exit\n"
+         "EXAMPLE: \n"
+         "wfes -n 1000 -s 0.001 -v 1e-8 -u 1e-8 -h 0.5\n");
 }
 
 /**
@@ -28,7 +30,7 @@ void print_help(void) {
 int main(int argc, char **argv) {
   // Parse the command line
   bool help = dkl_args_parse_flag(argc, argv, false, "--help", NULL);
-  if (help) {
+  if (help || argc == 1) {
     print_help();
     exit(DKL_HELP_EXIT);
   }
