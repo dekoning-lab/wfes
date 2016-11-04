@@ -17,6 +17,12 @@ void pardiso_64(void *pt, DKL_INT *maxfct, DKL_INT *mnum, DKL_INT *mtype,
                 DKL_INT *perm, DKL_INT *nrhs, DKL_INT *iparm, DKL_INT *msglvl,
                 void *b, void *x, DKL_INT *error);
 DKL_INT MKL_Peak_Mem_Usage(int mode);
+void    MKL_Set_Num_Threads(int nth);
+
+extern void omp_set_num_threads(int);
+extern void omp_set_dynamic(int);
+extern int omp_get_num_threads(void);
+extern int omp_get_max_threads(void);
 
 // PARDISO-specific parameters - refer to
 // https://software.intel.com/en-us/node/521690

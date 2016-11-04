@@ -3,23 +3,24 @@
 void print_help(void) {
   printf("WFES: Wright-Fisher model solver\n"
          "USAGE:\n"
-         " -n, --population_size:                   Population size\n"
-         " -s, --selection_coefficient:             Selection coefficient\n"
-         " -u, --backward_mutation_rate:            Mutation rate from A to a\n"
-         " -v, --forward_mutation_rate:             Mutation rate from a to A\n"
-         " -h, --dominance_coefficient:             Proportion of selection Aa recieves\n"
-         "[-p, --initial_count]:                    Assume we start with p copies\n"
-	       "[-i, --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
-         "[-m, --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
-         "[-x, --observed_allele_count]:            Observed count in the population (for allele age)\n"
-         "[-z, --zero_threshold]:                   Any number below this is considered 0. Default 1e-25\n"
-         "[-g, --generations_file]:                 Generations spent with a given number of copies\n"
-         "[-e, --extinction_file]:                  Probability of extinction, given the starting number of copies\n"
-         "[-f, --fixation_file]:                    Probability of fixation, given the starting number of copies\n"
-         "[-es, --extinction_sojourn_file]:         Expected number of generations spent in each state, conditional on eventual extinction\n"
-         "[-fs, --fixation_sojourn_file]:           Expected number of generations spent in each state, conditional on eventual fixation\n"
-         "[--force]:                                Do not preform any parameter validity checks\n"
-         "[--help]:                                 Print this message and exit\n"
+         " -n,  --population_size:                   Population size\n"
+         " -s,  --selection_coefficient:             Selection coefficient\n"
+         " -u,  --backward_mutation_rate:            Mutation rate from A to a\n"
+         " -v,  --forward_mutation_rate:             Mutation rate from a to A\n"
+         " -h,  --dominance_coefficient:             Proportion of selection Aa recieves\n"
+         "[-p,  --initial_count]:                    Assume we start with p copies\n"
+	       "[-i,  --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
+         "[-m,  --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
+         "[-x,  --observed_allele_count]:            Observed count in the population (for allele age)\n"
+         "[-z,  --zero_threshold]:                   Any number below this is considered 0. Default 1e-25\n"
+         "[-g,  --generations_file]:                 Generations spent with a given number of copies\n"
+         "[-e,  --extinction_file]:                  Probability of extinction, given the starting number of copies\n"
+         "[-f,  --fixation_file]:                    Probability of fixation, given the starting number of copies\n"
+         "[-es, --extinction_sojourn_file]:          Expected number of generations spent in each state, conditional on eventual extinction\n"
+         "[-fs, --fixation_sojourn_file]:            Expected number of generations spent in each state, conditional on eventual fixation\n"
+         "[-t,  --num_threads]:                      Number of MKL and OMP threads to use\n"
+         "[--force]:                                 Do not preform any parameter validity checks\n"
+         "[--help]:                                  Print this message and exit\n"
          "EXAMPLE: \n"
          "wfes -n 1000 -s 0.001 -v 1e-8 -u 1e-8 -h 0.5\n");
 }
@@ -129,6 +130,9 @@ int main(int argc, char **argv) {
   char *fixation_sojourn_file =
       dkl_args_parse_string(argc, argv, false, "-fs", "--fixation_sojourn_file", NULL);
 
+  int num_threads =
+      dkl_args_parse_int(argc, argv, true, "-t", "--num_threads", NULL);
+
   bool force = dkl_args_parse_flag(argc, argv, false, "--force", NULL);
   if (!force) {
     if (wf->population_size > 500000) {
@@ -156,6 +160,9 @@ int main(int argc, char **argv) {
   DKL_INT matrix_size = (2 * wf->population_size) - 1;
 
   wf_statistics *results = wf_statistics_new(wf->population_size);
+
+  MKL_Set_Num_Threads(num_threads);
+  omp_set_num_threads(num_threads);
 
   wf_solve(wf, results, zero_threshold);
 
