@@ -131,7 +131,13 @@ int main(int argc, char **argv) {
       dkl_args_parse_string(argc, argv, false, "-fs", "--fixation_sojourn_file", NULL);
 
   int num_threads =
-      dkl_args_parse_int(argc, argv, true, "-t", "--num_threads", NULL);
+      dkl_args_parse_int(argc, argv, false, "-t", "--num_threads", NULL);
+  if (dkl_errno == DKL_OPTION_NOT_FOUND) {
+    dkl_clear_errno();
+  } else {
+    MKL_Set_Num_Threads(num_threads);
+    omp_set_num_threads(num_threads);
+  }
 
   bool force = dkl_args_parse_flag(argc, argv, false, "--force", NULL);
   if (!force) {
@@ -161,8 +167,6 @@ int main(int argc, char **argv) {
 
   wf_statistics *results = wf_statistics_new(wf->population_size);
 
-  MKL_Set_Num_Threads(num_threads);
-  omp_set_num_threads(num_threads);
 
   wf_solve(wf, results, zero_threshold);
 
