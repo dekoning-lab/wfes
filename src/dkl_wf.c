@@ -216,12 +216,21 @@ csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size,
   return (Q);
 }
 
-long int factorial(int n) {
-  // recursive factorial for small n
+// recursive factorial for small n
+long int factorial_r(int n) {
   if (n == 0)
     return 1;
   else
-    return(n * factorial(n-1));
+    return(n * factorial_r(n-1));
+}
+
+// factorial for small n
+long int factorial(int n) {
+    long int f = 1;
+    for (int i = n; i >= 2; i--) {
+        f *= i;
+    }
+    return f;
 }
 
 double poisson_prob( int num, double rate ) {
