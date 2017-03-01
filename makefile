@@ -51,6 +51,7 @@ LIBS+=-liomp5 -ldl
 endif
 
 # DEBUG build flags
+# use `make DEBUG=1`
 ifeq (${DEBUG},1)
 FLAGS+=-DDEBUG -g -Wall
 endif

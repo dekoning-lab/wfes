@@ -11,7 +11,7 @@ void print_help(void) {
          "[-m,  --moran]:                            Use Moran model instead of Wright-Fisher model\n"
          "[-p,  --initial_count]:                    Assume we start with p copies\n"
 	       "[-i,  --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
-         "[-m,  --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
+         "[-sm,  --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
          "[-x,  --observed_allele_count]:            Observed count in the population (for allele age)\n"
          "[-z,  --zero_threshold]:                   Any number below this is considered 0. Default 1e-25\n"
          "[-g,  --generations_file]:                 Generations spent with a given number of copies\n"
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
   }
 
   wf->selection_mode =
-      dkl_args_parse_int(argc, argv, false, "-m", "--selection_mode", NULL);
+      dkl_args_parse_int(argc, argv, false, "-sm", "--selection_mode", NULL);
   if (dkl_errno == DKL_OPTION_NOT_FOUND) {
 #ifdef DEBUG
     println("Using default selection mode: fecundity");
