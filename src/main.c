@@ -170,7 +170,6 @@ int main(int argc, char **argv) {
 
   wf_statistics *results = wf_statistics_new(wf->population_size);
 
-
   // Do work
   wf_solve(wf, results, zero_threshold);
 

@@ -146,14 +146,15 @@ void wf_make_block(wf_parameters *wf, double threshold, DKL_INT row_offset,
   assert(Q->data);
 
   // Copy the buffer in the CSR representation into Q
+  // https://software.intel.com/en-us/node/520848
   DKL_INT info;
   DKL_INT *job = dkl_alloc(6, DKL_INT);
-  job[0] = 0;
-  job[1] = 0;
-  job[2] = 0;
-  job[3] = 2;
-  job[4] = nnz;
-  job[5] = 1;
+  job[0] = 0; // the rectangular matrix A is converted to the CSR format
+  job[1] = 0; // zero-based indexing for the rectangular matrix A is used
+  job[2] = 0; // zero-based indexing for the matrix in CSR format is used
+  job[3] = 2; // `buffer` is a whole matrix A
+  job[4] = nnz; // maximum number of the non-zero elements allowed if job[0]=0
+  job[5] = 1; // arrays acsr, ia, ja are generated for the output storage
 
   mkl_ddnscsr(job, &block_size, &size, buffer, &size, &(Q->data[*old_size]),
               &(Q->cols[*old_size]), Q->row_index, &info);
