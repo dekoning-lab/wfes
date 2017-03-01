@@ -270,7 +270,7 @@ double return_max_poisson_sum( double rate, double epsilon ) {
   return sum;
 }
 
-void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
+void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool moran) {
   // Declaration
   DKL_INT matrix_size = (2 * wf->population_size) - 1;
 
@@ -317,8 +317,14 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold) {
   start_time = get_current_time();
 #endif
 
-  // Build sparse WF matrix
-  csr_sparse_matrix *A = wf_matrix_csr(wf, block_size, zero_threshold);
+  csr_sparse_matrix *A;
+  if (!moran) {
+    // Build sparse WF matrix
+    A = wf_matrix_csr(wf, block_size, zero_threshold);
+  } else {
+    // Build sparse Moran matrix
+    A = moran_matrix_csr(wf);
+  }
 
 #ifdef DEBUG
   assert(csr_sparse_is_correct(A) == true);

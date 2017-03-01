@@ -174,5 +174,5 @@ csr_sparse_matrix *wf_matrix_csr(wf_parameters *wf, DKL_INT block_size,
  * spend with i+1 copies of A, given the population starts with 1 copy of A
  *
  */
-void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold);
+void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool moran);
 #endif /* DKL_WF_H */

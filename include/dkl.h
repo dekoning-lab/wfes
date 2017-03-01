@@ -34,6 +34,7 @@
 #include "dkl_time.h"
 #include "dkl_args.h"
 #include "dkl_wf.h"
+#include "dkl_moran.h"
 
 extern int64_t dkl_errno;
 

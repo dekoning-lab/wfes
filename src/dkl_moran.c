@@ -1,4 +1,4 @@
-#include "dkl_wf.h"
+#include "dkl_moran.h"
 
 void moran_row(double *row, DKL_INT i, double Ne, double u, double v, double w_AA, double w_Aa, double w_aa) {
 
@@ -36,7 +36,7 @@ void moran_row(double *row, DKL_INT i, double Ne, double u, double v, double w_A
   row[4] = P_p2;
 }
 
-csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf, DKL_INT block_size, double threshold) {
+csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   double Ne = (double)2 * wf->population_size;
   DKL_INT size = (2 * wf->population_size) - 1;
