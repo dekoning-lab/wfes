@@ -11,3 +11,4 @@ paper_table/
 wfes.*.so
 build/
 proto/
+*.dSYM/

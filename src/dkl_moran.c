@@ -45,7 +45,7 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   Q->nrows = size;
   Q->ncols = size;
-  DKL_INT nnz = ((Ne - 3) * 5) + 10;
+  DKL_INT nnz = ((Ne - 5) * 5) + 14;
   Q->nnz = nnz;
 
   Q->data = dkl_alloc(nnz, double);
@@ -61,55 +61,67 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
   double w_aa = 1;
 
   // Head
-  // [* . . . . .]
+  // [* * * . . .]
   // [* * * * . .]
   Q->cols[0] = 0;
-  Q->cols[1] = 0;
-  Q->cols[2] = 1;
-  Q->cols[3] = 2;
-  Q->cols[4] = 3;
+  Q->cols[1] = 1;
+  Q->cols[2] = 2;
+  Q->cols[3] = 0;
+  Q->cols[4] = 1;
+  Q->cols[5] = 2;
+  Q->cols[6] = 3;
 
   Q->row_index[0] = 0;
-  Q->row_index[1] = 1;
+  Q->row_index[1] = 3;
 
-  Q->data[0] = 1;
   moran_row(row, 1, Ne, u, v, w_AA, w_Aa, w_aa);
   row[2] = 1 - row[1] - row[3] - row[4];
-  Q->data[1] = row[1];
-  Q->data[2] = row[2];
-  Q->data[3] = row[3];
-  Q->data[4] = row[4];
+  Q->data[0] = row[2];
+  Q->data[1] = row[3];
+  Q->data[2] = row[4];
+
+  moran_row(row, 2, Ne, u, v, w_AA, w_Aa, w_aa);
+  Q->data[3] = row[1];
+  Q->data[4] = row[2];
+  Q->data[5] = row[3];
+  Q->data[6] = row[4];
 
   // Tail
   // [. . * * * *]
-  // [. . . . . *]
+  // [. . . * * *]
   Q->cols[nnz - 1] = size - 1;
-  Q->cols[nnz - 2] = size - 1;
-  Q->cols[nnz - 3] = size - 2;
-  Q->cols[nnz - 4] = size - 3;
-  Q->cols[nnz - 5] = size - 4;
+  Q->cols[nnz - 2] = size - 2;
+  Q->cols[nnz - 3] = size - 3;
+  Q->cols[nnz - 4] = size - 1;
+  Q->cols[nnz - 5] = size - 2;
+  Q->cols[nnz - 6] = size - 3;
+  Q->cols[nnz - 7] = size - 4;
 
-  Q->row_index[Q->nrows] = Q->nnz + 1; // Special CSR value
-  Q->row_index[Q->nrows - 1] = Q->nnz - 1;
-  Q->row_index[Q->nrows - 2] = Q->nnz - 5;
+  Q->row_index[Q->nrows] = Q->nnz; // Special CSR value
+  Q->row_index[Q->nrows - 1] = Q->nnz - 3;
+  Q->row_index[Q->nrows - 2] = Q->nnz - 7;
 
-  Q->data[nnz - 1] = 1;
-  moran_row(row, 1, Ne, u, v, w_AA, w_Aa, w_aa);
+  moran_row(row, Ne - 1, Ne, u, v, w_AA, w_Aa, w_aa);
   row[2] = 1 - row[0] - row[1] - row[3];
-  Q->data[nnz - 5] = row[0];
-  Q->data[nnz - 4] = row[1];
-  Q->data[nnz - 3] = row[2];
-  Q->data[nnz - 2] = row[3];
+  Q->data[nnz - 3] = row[0];
+  Q->data[nnz - 2] = row[1];
+  Q->data[nnz - 1] = row[2];
 
-  for(DKL_INT i = 2; i < size; i++) {
-    DKL_INT l = (i - 1) * 5;
-    Q->row_index[i] = l - 1;
+  moran_row(row, Ne - 2, Ne, u, v, w_AA, w_Aa, w_aa);
+  Q->data[nnz - 7] = row[0];
+  Q->data[nnz - 6] = row[1];
+  Q->data[nnz - 5] = row[2];
+  Q->data[nnz - 4] = row[3];
 
-    Q->cols[l] = i - 2;
-    Q->cols[l + 1] = i - 1;
-    Q->cols[l + 2] = i;
-    Q->cols[l + 3] = i + 1;
-    Q->cols[l + 4] = i + 2;
+  for(DKL_INT i = 3; i < size - 1; i++) {
+    DKL_INT l = ((i - 3) * 5) + 7;
+    Q->row_index[i - 1] = l;
+
+    Q->cols[l] = i - 3;
+    Q->cols[l + 1] = i - 2;
+    Q->cols[l + 2] = i - 1;
+    Q->cols[l + 3] = i;
+    Q->cols[l + 4] = i + 1;
 
     moran_row(row, i, Ne, u, v, w_AA, w_Aa, w_aa);
 
@@ -120,5 +132,25 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
     Q->data[l + 4] = row[4];
 
   }
+
+  #ifdef DEBUG
+  for(DKL_INT i = 0; i < nnz; i++) {
+    printf("%f\t", Q->data[i]);
+  }
+  printf("\n\n");
+
+  for(DKL_INT i = 0; i < nnz; i++) {
+    printf("%" PRId64 "\t", Q->cols[i]);
+  }
+  printf("\n\n");
+
+  for(DKL_INT i = 0; i < Q->nrows + 1; i++) {
+    printf("%" PRId64 "\t", Q->row_index[i]);
+  }
+  printf("\n\n");
+
+
+  #endif
+
   return Q;
 }

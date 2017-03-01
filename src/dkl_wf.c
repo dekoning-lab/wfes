@@ -332,10 +332,25 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
   printf("Building matrix: %gs\n", end_time - start_time);
 #endif
 
-  // RHS for solving for column of B
-  for (i = 0; i < matrix_size; i++) {
-    double q = wf_sampling_coefficient(wf, i + 1);
-    y[i] = pow(1 - q, 2 * wf->population_size);
+  if (!moran) {
+    // RHS for solving for column of B
+    for (i = 0; i < matrix_size; i++) {
+      double q = wf_sampling_coefficient(wf, i + 1);
+      y[i] = pow(1 - q, 2 * wf->population_size);
+    }
+  } else {
+    double *row = dkl_alloc(5, double);
+    double Ne = (double)2 * wf->population_size;
+    double u = wf->backward_mutation_rate;
+    double v = wf->forward_mutation_rate;
+    double w_AA = 1 + wf->selection;
+    double w_Aa = 1 + (wf->selection * wf->dominance_coefficient);
+    double w_aa = 1;
+    memset(y, 0.0, matrix_size * sizeof(double));
+    moran_row(row, 1, Ne, u, v, w_AA, w_Aa, w_aa);
+    y[0] = row[1];
+    moran_row(row, 2, Ne, u, v, w_AA, w_Aa, w_aa);
+    y[1] = row[0];
   }
 
   // Setup Pardiso control parameters
