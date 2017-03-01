@@ -8,6 +8,7 @@ void print_help(void) {
          " -u,  --backward_mutation_rate:            Mutation rate from A to a\n"
          " -v,  --forward_mutation_rate:             Mutation rate from a to A\n"
          " -h,  --dominance_coefficient:             Proportion of selection Aa recieves\n"
+         "[-m,  --moran]:                            Use Moran model instead of Wright-Fisher model\n"
          "[-p,  --initial_count]:                    Assume we start with p copies\n"
 	       "[-i,  --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
          "[-m,  --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
@@ -52,6 +53,8 @@ int main(int argc, char **argv) {
       dkl_args_parse_double(argc, argv, true, "-h", "--dominance", NULL);
 
   // Parse optional parameters
+  bool moran = dkl_args_parse_flag(argc, argv, false, "-m", "--moran", NULL);
+
   double zero_threshold =
       dkl_args_parse_double(argc, argv, false, "-z", "--zero_threshold", NULL);
   if (dkl_errno == DKL_OPTION_NOT_FOUND) {
@@ -168,6 +171,7 @@ int main(int argc, char **argv) {
   wf_statistics *results = wf_statistics_new(wf->population_size);
 
 
+  // Do work
   wf_solve(wf, results, zero_threshold);
 
   // Correct for halpoid size if necessary
