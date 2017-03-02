@@ -56,8 +56,8 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   double u = wf->backward_mutation_rate;
   double v = wf->forward_mutation_rate;
-  double w_AA = 1 + wf->selection;
-  double w_Aa = 1 + (wf->selection * wf->dominance_coefficient);
+  double w_AA = 1 - wf->selection;
+  double w_Aa = 1 - (wf->selection * wf->dominance_coefficient);
   double w_aa = 1;
 
   // Head
@@ -113,6 +113,7 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
   Q->data[nnz - 5] = row[2];
   Q->data[nnz - 4] = row[3];
 
+  #pragma omp parallel for
   for(DKL_INT i = 3; i < size - 1; i++) {
     DKL_INT l = ((i - 3) * 5) + 7;
     Q->row_index[i - 1] = l;
@@ -135,17 +136,17 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   #ifdef DEBUG
   for(DKL_INT i = 0; i < nnz; i++) {
-    printf("%f\t", Q->data[i]);
+    printf("%f,", Q->data[i]);
   }
   printf("\n\n");
 
   for(DKL_INT i = 0; i < nnz; i++) {
-    printf("%" PRId64 "\t", Q->cols[i]);
+    printf("%" PRId64 ",", Q->cols[i]);
   }
   printf("\n\n");
 
   for(DKL_INT i = 0; i < Q->nrows + 1; i++) {
-    printf("%" PRId64 "\t", Q->row_index[i]);
+    printf("%" PRId64 ",", Q->row_index[i]);
   }
   printf("\n\n");
 
