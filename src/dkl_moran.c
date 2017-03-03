@@ -76,15 +76,15 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   moran_row(row, 1, Ne, u, v, w_AA, w_Aa, w_aa);
   row[2] = 1 - row[1] - row[3] - row[4];
-  Q->data[0] = row[2];
-  Q->data[1] = row[3];
-  Q->data[2] = row[4];
+  Q->data[0] = 1.0 - row[2];
+  Q->data[1] = -row[3];
+  Q->data[2] = -row[4];
 
   moran_row(row, 2, Ne, u, v, w_AA, w_Aa, w_aa);
-  Q->data[3] = row[1];
-  Q->data[4] = row[2];
-  Q->data[5] = row[3];
-  Q->data[6] = row[4];
+  Q->data[3] = -row[1];
+  Q->data[4] = 1.0 - row[2];
+  Q->data[5] = -row[3];
+  Q->data[6] = -row[4];
 
   // Tail
   // [. . * * * *]
@@ -103,15 +103,15 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   moran_row(row, Ne - 1, Ne, u, v, w_AA, w_Aa, w_aa);
   row[2] = 1 - row[0] - row[1] - row[3];
-  Q->data[nnz - 3] = row[0];
-  Q->data[nnz - 2] = row[1];
-  Q->data[nnz - 1] = row[2];
+  Q->data[nnz - 3] = -row[0];
+  Q->data[nnz - 2] = -row[1];
+  Q->data[nnz - 1] = 1.0 - row[2];
 
   moran_row(row, Ne - 2, Ne, u, v, w_AA, w_Aa, w_aa);
-  Q->data[nnz - 7] = row[0];
-  Q->data[nnz - 6] = row[1];
-  Q->data[nnz - 5] = row[2];
-  Q->data[nnz - 4] = row[3];
+  Q->data[nnz - 7] = -row[0];
+  Q->data[nnz - 6] = -row[1];
+  Q->data[nnz - 5] = 1.0 - row[2];
+  Q->data[nnz - 4] = -row[3];
 
   #pragma omp parallel for
   for(DKL_INT i = 3; i < size - 1; i++) {
@@ -126,11 +126,11 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
     moran_row(row, i, Ne, u, v, w_AA, w_Aa, w_aa);
 
-    Q->data[l    ] = row[0];
-    Q->data[l + 1] = row[1];
-    Q->data[l + 2] = row[2];
-    Q->data[l + 3] = row[3];
-    Q->data[l + 4] = row[4];
+    Q->data[l    ] = -row[0];
+    Q->data[l + 1] = -row[1];
+    Q->data[l + 2] = 1.0 - row[2];
+    Q->data[l + 3] = -row[3];
+    Q->data[l + 4] = -row[4];
 
   }
 
@@ -148,16 +148,6 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
   // for(DKL_INT i = 0; i < Q->nrows + 1; i++) {
   //   printf("%" PRId64 ",", Q->row_index[i]);
   // }
-
-  double *A = csr_to_dense(Q);
-
-  for (DKL_INT i = 0; i < Q->nrows; i++) {
-    for (DKL_INT j = 0; j < Q->ncols; j++) {
-      DKL_INT idx = i * Q->ncols + j;
-      printf("%f, ", A[idx]);
-    }
-    printf("\n");
-  }
 
   printf("\n\n");
 

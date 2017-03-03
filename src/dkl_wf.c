@@ -322,6 +322,18 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
   assert(csr_sparse_is_correct(A) == true);
   end_time = get_current_time();
   printf("Building matrix: %gs\n", end_time - start_time);
+
+  double *T = csr_to_dense(A);
+
+  for (DKL_INT i = 0; i < A->nrows; i++) {
+    for (DKL_INT j = 0; j < A->ncols; j++) {
+      DKL_INT idx = i * A->ncols + j;
+      printf("%f, ", T[idx]);
+    }
+    printf("\n");
+  }
+  dkl_dealloc(T);
+
   #endif
 
   if (!moran) {
