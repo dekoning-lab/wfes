@@ -22,3 +22,23 @@ bool csr_sparse_is_correct(csr_sparse_matrix *A) {
   }
   return true;
 }
+
+double *csr_to_dense(csr_sparse_matrix *A) {
+  // Copy the buffer in the CSR representation into Q
+  // https://software.intel.com/en-us/node/520848
+
+  double *buffer = dkl_alloc(A->nrows * A->ncols, double);
+  DKL_INT info;
+  DKL_INT *job = dkl_alloc(6, DKL_INT);
+  job[0] = 1; // the rectangular matrix A is restored from the CSR format
+  job[1] = 0; // zero-based indexing for the rectangular matrix A is used
+  job[2] = 0; // zero-based indexing for the matrix in CSR format is used
+  job[3] = 2; // `buffer` is a whole matrix A
+  job[4] = A->nnz; // maximum number of the non-zero elements allowed if job[0]=0
+
+  mkl_ddnscsr(job, &A->nrows, &A->ncols, buffer, &A->ncols, A->data, A->cols, A->row_index, &info);
+  assert(info == 0);
+  dkl_dealloc(job);
+
+  return buffer;
+}

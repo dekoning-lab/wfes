@@ -135,19 +135,30 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
   }
 
   #ifdef DEBUG
-  for(DKL_INT i = 0; i < nnz; i++) {
-    printf("%f,", Q->data[i]);
-  }
-  printf("\n\n");
+  // for(DKL_INT i = 0; i < nnz; i++) {
+  //   printf("%f,", Q->data[i]);
+  // }
+  // printf("\n\n");
+  //
+  // for(DKL_INT i = 0; i < nnz; i++) {
+  //   printf("%" PRId64 ",", Q->cols[i]);
+  // }
+  // printf("\n\n");
+  //
+  // for(DKL_INT i = 0; i < Q->nrows + 1; i++) {
+  //   printf("%" PRId64 ",", Q->row_index[i]);
+  // }
 
-  for(DKL_INT i = 0; i < nnz; i++) {
-    printf("%" PRId64 ",", Q->cols[i]);
-  }
-  printf("\n\n");
+  double *A = csr_to_dense(Q);
 
-  for(DKL_INT i = 0; i < Q->nrows + 1; i++) {
-    printf("%" PRId64 ",", Q->row_index[i]);
+  for (DKL_INT i = 0; i < Q->nrows; i++) {
+    for (DKL_INT j = 0; j < Q->ncols; j++) {
+      DKL_INT idx = i * Q->ncols + j;
+      printf("%f, ", A[idx]);
+    }
+    printf("\n");
   }
+
   printf("\n\n");
 
 

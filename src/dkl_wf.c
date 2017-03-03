@@ -379,8 +379,6 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
   pardiso_control[MKL_PARDISO_MATRIX_CHECK_OPTION] = MKL_PARDISO_MATRIX_CHECK_ENABLE;
   #endif
 
-  //}}}1
-
   // Symbolic Factorization
   pardiso_phase = MKL_PARDISO_SOLVER_PHASE_ANALYSIS;
   #ifdef DEBUG

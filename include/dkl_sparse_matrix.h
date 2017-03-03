@@ -28,4 +28,6 @@ typedef struct csr_sparse_matrix {
  */
 bool csr_sparse_is_correct(csr_sparse_matrix *A);
 
+double *csr_to_dense(csr_sparse_matrix *A);
+
 #endif /* DKL_SPARSE_MATRIX_H */
