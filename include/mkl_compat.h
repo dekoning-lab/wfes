@@ -12,6 +12,11 @@ void cblas_dscal(const DKL_INT, const double a, double *x, const DKL_INT incx);
 void mkl_ddnscsr(const DKL_INT *job, const DKL_INT *m, const DKL_INT *n,
                  double *adns, const DKL_INT *lda, double *acsr, DKL_INT *ja,
                  DKL_INT *ia, DKL_INT *info);
+
+void mkl_cspblas_dcsrgemv(
+  const char *transa , const DKL_INT *m ,
+  const double *a , const DKL_INT *ia , const DKL_INT *ja , const double *x , double *y );
+
 void pardiso_64(void *pt, DKL_INT *maxfct, DKL_INT *mnum, DKL_INT *mtype,
                 DKL_INT *phase, DKL_INT *n, void *a, DKL_INT *ia, DKL_INT *ja,
                 DKL_INT *perm, DKL_INT *nrhs, DKL_INT *iparm, DKL_INT *msglvl,

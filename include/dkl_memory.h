@@ -19,4 +19,7 @@ void __dkl_free_v(double *d);
     error_print("Memory not allocated");                                       \
   }
 
+void print_double_matrix(double *A, DKL_INT size);
+void print_double_vector(double *A, DKL_INT size);
+
 #endif /* DKL_MEMORY_H */

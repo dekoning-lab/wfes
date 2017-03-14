@@ -42,3 +42,23 @@ double *csr_to_dense(csr_sparse_matrix *A) {
 
   return buffer;
 }
+
+// Copy xth column of A into y
+void csr_matrix_column(csr_sparse_matrix *A, DKL_INT x, double* y) {
+  for (DKL_INT i = 0; i < A->nrows; i++) {
+    DKL_INT idx = A->row_index[i];          // Start of current row
+    DKL_INT n = A->row_index[i + 1] - idx;  // Number of entries in current row
+    bool found = false;                     // Is this element stored?
+    for(DKL_INT j = 0; j < n; j++) {
+      DKL_INT col = A->cols[idx + j];
+      if (col == x) {
+        found = true;
+        y[i] = A->data[idx + j];
+        break;
+      }
+    }
+    if (!found) {
+      y[i] = 0;
+    }
+  }
+}

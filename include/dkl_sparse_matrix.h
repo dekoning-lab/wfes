@@ -29,5 +29,6 @@ typedef struct csr_sparse_matrix {
 bool csr_sparse_is_correct(csr_sparse_matrix *A);
 
 double *csr_to_dense(csr_sparse_matrix *A);
+void csr_matrix_column(csr_sparse_matrix *A, DKL_INT x, double* y);
 
 #endif /* DKL_SPARSE_MATRIX_H */
