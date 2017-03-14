@@ -56,6 +56,11 @@ ifeq (${DEBUG},1)
 FLAGS+=-DDEBUG -g -Wall
 endif
 
+# use `make MATRIX_PRINT=1`
+ifeq (${MATRIX_PRINT},1)
+FLAGS+=-DMATRIX_PRINT
+endif
+
 C_RED=\033[0;31m
 C_NONE=\033[0m
 
