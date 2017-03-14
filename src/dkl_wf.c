@@ -345,7 +345,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
       double q = wf_sampling_coefficient(wf, i + 1);
       y[i] = pow(1 - q, 2 * wf->population_size);
     }
-    #ifdef DEBUG
+    #ifdef MATRIX_PRINT
     print_double_vector(y, matrix_size);
     #endif
   }
@@ -363,7 +363,7 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
     moran_row(row, 2, Ne, u, v, w_AA, w_Aa, w_aa);
     y[1] = row[0];
 
-    #ifdef DEBUG
+    #ifdef MATRIX_PRINT
     printf("%f %f\n", y[0], y[1]);
     #endif
   }
@@ -504,7 +504,9 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
         double q = wf_sampling_coefficient(wf, i + 1);
         y[i] = pow(1 - q, 2 * wf->population_size);
       }
+      #ifdef MATRIX_PRINT
       print_double_vector(y, matrix_size);
+      #endif
     }
     else {
       double *row = dkl_alloc(5, double);
@@ -559,7 +561,9 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
     for (i = wf->initial_count; i < matrix_size; i++) {
       y[i] = 0.0;
     }
+    #ifdef MATRIX_PRINT
     print_double_vector(y, matrix_size);
+    #endif
 
     pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
     pardiso_64(
@@ -585,8 +589,10 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
 
     if (wf->observed_allele_count > 0) {
       // Print M1
+      #ifdef MATRIX_PRINT
       printf("M1\n");
       print_double_vector(r->generations, matrix_size);
+      #endif
       // Solve for M2 (equation 23; WFES)
       pardiso_control[MKL_PARDISO_SOLVE_OPTION] = MKL_PARDISO_SOLVE_TRANSPOSED;
       pardiso_64(
@@ -604,8 +610,10 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
         // Now store M2 as intermediate result (equation 23; WFES)
         memcpy(M_2, y, matrix_size * sizeof(double));
         // Print M2
+        #ifdef MATRIX_PRINT
         printf("M_2\n");
         print_double_vector(M_2, matrix_size);
+        #endif
       }
 
       // Set x-th column of Q
@@ -637,8 +645,10 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
 
       // Copy column x of Q to IQ_col
       memcpy(y, IQ_col, matrix_size * sizeof(double));
+      #ifdef MATRIX_PRINT
       printf("IQ_col\n");
       print_double_vector(y, matrix_size);
+      #endif
 
       exp_age = 0;
       for (i = 0; i < matrix_size; i++) {
@@ -665,8 +675,10 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
       else {
         // Now store M3 as intermediate result (equation 23; WFES)
         memcpy(M_3, y, matrix_size * sizeof(double));
+        #ifdef MATRIX_PRINT
         printf("M3\n");
         print_double_vector(M_3, matrix_size);
+        #endif
       }
 
       // Calculate Ax = xth column of Q(I+Q)
@@ -706,15 +718,19 @@ void wf_solve(wf_parameters *wf, wf_statistics *r, double zero_threshold, bool m
       //   }
       // }
       //
+      #ifdef MATRIX_PRINT
       printf("Ax_col\n");
       print_double_vector(Ax, matrix_size);
+      #endif
       exp_age_var = 0.0;
       double second_moment = 0;
       for (i = 0; i < matrix_size; i++) {
         second_moment += (M_3[i] * Ax[i]);
       }
       second_moment /= r->generations[wf->observed_allele_count - 1];
+      #ifdef MATRIX_PRINT
       printf("Second moment: %g\n", second_moment);
+      #endif
 
       exp_age_var = sqrt(second_moment - pow(exp_age, 2.0));
 
