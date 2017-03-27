@@ -115,6 +115,8 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
 
   #pragma omp parallel for
   for(DKL_INT i = 3; i < size - 1; i++) {
+    // thread-private row
+    double *row_p = dkl_alloc(5, double);
     DKL_INT l = ((i - 3) * 5) + 7;
     Q->row_index[i - 1] = l;
 
@@ -124,13 +126,13 @@ csr_sparse_matrix *moran_matrix_csr(wf_parameters *wf) {
     Q->cols[l + 3] = i;
     Q->cols[l + 4] = i + 1;
 
-    moran_row(row, i, Ne, u, v, w_AA, w_Aa, w_aa);
+    moran_row(row_p, i, Ne, u, v, w_AA, w_Aa, w_aa);
 
-    Q->data[l    ] = -row[0];
-    Q->data[l + 1] = -row[1];
-    Q->data[l + 2] = 1.0 - row[2];
-    Q->data[l + 3] = -row[3];
-    Q->data[l + 4] = -row[4];
+    Q->data[l    ] = -row_p[0];
+    Q->data[l + 1] = -row_p[1];
+    Q->data[l + 2] = 1.0 - row_p[2];
+    Q->data[l + 3] = -row_p[3];
+    Q->data[l + 4] = -row_p[4];
 
   }
 
