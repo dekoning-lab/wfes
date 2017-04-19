@@ -21,9 +21,9 @@ Several variations of the general Wright-Fisher model are supported by default t
 
 ### Notes
 
-**This software is in beta release.** Please report bugs to the authors by [opening an issue](https://github.com/dekoning-lab/wfes/issues/new). Thanks! - [Ivan](mailto:ikryukov@ucalgary.ca) and [Jason](mailto:jason.dekoning@ucalgary.ca).
+Please report bugs to the authors by [opening an issue](https://github.com/dekoning-lab/wfes/issues/new). Thanks! - [Ivan](mailto:ikryukov@ucalgary.ca) and [Jason](mailto:jason.dekoning@ucalgary.ca).
 
-*Citation:* **Kryukov I, DeSanctis B, and APJ de Koning (2016). Efficient techniques for direct analysis of discrete-time population genetic models. Submitted. (BioArXiv link to be added.)**
+*Citation:* **Krukov I, DeSanctis B, and APJ de Koning (2016). Wright–Fisher exact solver (WFES): scalable analysis of population genetic models without simulation or diffusion theory. Bioinformatics (Oxford), btw802. https://doi.org/10.1093/bioinformatics/btw802**
 
 ---
 ## Building
