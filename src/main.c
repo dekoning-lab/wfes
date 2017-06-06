@@ -8,9 +8,10 @@ void print_help(void) {
          " -u,  --backward_mutation_rate:            Mutation rate from A to a\n"
          " -v,  --forward_mutation_rate:             Mutation rate from a to A\n"
          " -h,  --dominance_coefficient:             Proportion of selection Aa recieves\n"
+		 " -o,  --output_file:                       Append all output to file\n"
          "[-m,  --moran]:                            Use Moran model instead of Wright-Fisher model\n"
          "[-p,  --initial_count]:                    Assume we start with p copies\n"
-	       "[-i,  --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
+		 "[-i,  --integrate_initial:                 Integrate over p (cutoff: recommended <= 1e-4)\n"
          "[-sm,  --selection_mode]:                   Selection mode (1: viability; 2: haploid)\n"
          "[-x,  --observed_allele_count]:            Observed count in the population (for allele age)\n"
          "[-z,  --zero_threshold]:                   Any number below this is considered 0. Default 1e-25\n"
@@ -119,6 +120,8 @@ int main(int argc, char **argv) {
     // output)
     wf->population_size /= 2.0;
   }
+  char *output_file =
+      dkl_args_parse_string(argc, argv, false, "-o", "--output_file", NULL);
 
   char *generations_file =
       dkl_args_parse_string(argc, argv, false, "-g", "--generations_file",
@@ -179,7 +182,13 @@ int main(int argc, char **argv) {
   }
   // Output the results
 
-  printf("%" PRId64 ",%g,%g,%g,%g,%g,%g,%g,%g,%g,%g", wf->population_size,
+  FILE* f;
+  if(output_file) {
+	  f = fopen(output_file, "a");
+  } else {
+	  f = stdout;
+  }
+  fprintf(f, "%" PRId64 ",%g,%g,%g,%g,%g,%g,%g,%g,%g,%g\n", wf->population_size,
          wf->selection, wf->forward_mutation_rate, wf->backward_mutation_rate,
          wf->dominance_coefficient, results->probability_extinction,
          results->probability_fixation, results->time_extinction,
