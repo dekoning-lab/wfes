@@ -29,7 +29,7 @@ INTEL_OMP_DIR:=./lib/${uname}
 
 # Default libraries and flags
 FLAGS:=-DMKL_ILP64 -std=c99
-RPATH:=-rpath,${MKL_LIB_DIR},-rpath,${INTEL_OMP_DIR}
+RPATH:=-rpath,${MKL_LIB_DIR},-rpath,'$$ORIGIN/${INTEL_OMP_DIR}'
 LIBS:=-lmkl_intel_ilp64 -lmkl_core -lmkl_intel_thread -lpthread -lmkl_avx -lmkl_vml_avx -lm
 
 # ICC-specific flags
